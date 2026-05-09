@@ -1,0 +1,6 @@
+# App UI
+streamlit>=1.35.0
+
+# FastForge CLI — appelé en subprocess depuis la page Generate
+# Syntaxe pip/uv pour installer depuis GitHub directement
+fastforge @ git+https://github.com/SavanTech25/fastforge.git

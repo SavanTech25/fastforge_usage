@@ -1,0 +1,173 @@
+/* ─── Google Fonts ────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+
+/* ─── Base ────────────────────────────────────────────────────────────────── */
+html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
+.stApp { background: #07071a; color: #e0e0f5; }
+header[data-testid="stHeader"] { background: transparent; }
+
+/* ─── Sidebar ─────────────────────────────────────────────────────────────── */
+section[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #0d0d1f 0%, #0f0f28 100%);
+    border-right: 1px solid rgba(99,102,241,0.2);
+}
+section[data-testid="stSidebar"] * { color: #c4c4e0 !important; }
+section[data-testid="stSidebar"] a { color: #06b6d4 !important; }
+
+/* ─── Hero ────────────────────────────────────────────────────────────────── */
+.hero-section {
+    background: linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(139,92,246,0.08) 50%, rgba(6,182,212,0.06) 100%);
+    border: 1px solid rgba(99,102,241,0.25);
+    border-radius: 20px;
+    padding: 40px 48px;
+    margin-bottom: 32px;
+    position: relative;
+    overflow: hidden;
+}
+.hero-section::before {
+    content: '';
+    position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+    background: radial-gradient(circle at 30% 50%, rgba(99,102,241,0.06) 0%, transparent 60%);
+    pointer-events: none;
+}
+.hero-title {
+    font-size: 3rem; font-weight: 800;
+    background: linear-gradient(135deg, #a5b4fc, #06b6d4, #8b5cf6);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin: 0 0 8px 0; line-height: 1.1;
+}
+.hero-sub {
+    font-size: 1.2rem; color: #94a3b8; font-weight: 400;
+    margin: 0 0 28px 0;
+}
+
+/* ─── Badges ──────────────────────────────────────────────────────────────── */
+.badge {
+    display: inline-block;
+    background: rgba(99,102,241,0.18); border: 1px solid rgba(99,102,241,0.35);
+    border-radius: 999px; padding: 4px 14px; font-size: 0.78rem;
+    color: #a5b4fc; margin: 0 6px 6px 0; font-weight: 500;
+}
+.skill-badge {
+    display: inline-block;
+    background: rgba(99,102,241,0.14); border: 1px solid rgba(99,102,241,0.3);
+    border-radius: 999px; padding: 5px 14px; font-size: 0.78rem;
+    color: #a5b4fc; margin: 4px 4px 4px 0; font-weight: 500;
+}
+
+/* ─── Command cards (Home) ────────────────────────────────────────────────── */
+.cmd-card {
+    background: linear-gradient(135deg, rgba(15,15,35,0.95), rgba(22,22,50,0.9));
+    border: 1px solid rgba(99,102,241,0.25);
+    border-radius: 14px; padding: 22px 24px; height: 100%;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.cmd-card:hover {
+    border-color: rgba(99,102,241,0.55);
+    box-shadow: 0 0 24px rgba(99,102,241,0.15);
+}
+.cmd-icon  { font-size: 2rem; margin-bottom: 8px; }
+.cmd-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem; font-weight: 600; color: #06b6d4; margin-bottom: 6px;
+}
+.cmd-desc  { font-size: 0.85rem; color: #94a3b8; line-height: 1.6; }
+
+/* ─── Code blocks ─────────────────────────────────────────────────────────── */
+.code-block {
+    background: rgba(0,0,0,0.5); border: 1px solid rgba(99,102,241,0.3);
+    border-radius: 10px; padding: 16px 20px;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;
+    color: #a5b4fc; margin: 12px 0; white-space: pre-wrap; line-height: 1.7;
+}
+.code-comment { color: #4a5568; }
+.code-cmd     { color: #06b6d4; }
+.code-arg     { color: #f59e0b; }
+.code-flag    { color: #8b5cf6; }
+
+/* ─── Generate page ───────────────────────────────────────────────────────── */
+.cmd-box {
+    background: rgba(0,0,0,0.45); border: 1px solid rgba(99,102,241,0.3);
+    border-radius: 10px; padding: 14px 18px;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.82rem;
+    color: #a5b4fc; margin: 10px 0; white-space: pre-wrap; line-height: 1.8;
+}
+.info-box {
+    background: rgba(6,182,212,0.08); border: 1px solid rgba(6,182,212,0.25);
+    border-radius: 10px; padding: 14px 18px;
+    font-size: 0.85rem; color: #94a3b8; margin-bottom: 18px;
+}
+
+/* ─── Section titles ──────────────────────────────────────────────────────── */
+.section-title {
+    font-size: 1.4rem; font-weight: 700;
+    background: linear-gradient(90deg, #a5b4fc, #8b5cf6);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin: 36px 0 16px 0;
+}
+.page-title {
+    font-size: 2.2rem; font-weight: 800;
+    background: linear-gradient(135deg, #a5b4fc, #06b6d4, #8b5cf6);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 4px;
+}
+.page-sub { color: #94a3b8; font-size: 1rem; margin-bottom: 28px; }
+
+/* ─── Requirement cards ───────────────────────────────────────────────────── */
+.req-card {
+    background: rgba(16,185,129,0.07); border: 1px solid rgba(16,185,129,0.25);
+    border-radius: 12px; padding: 16px 20px; margin-bottom: 12px;
+}
+.req-title { font-weight: 600; color: #10b981; font-size: 0.9rem; margin-bottom: 4px; }
+.req-desc  { color: #94a3b8; font-size: 0.82rem; }
+
+/* ─── Architecture boxes ──────────────────────────────────────────────────── */
+.arch-box {
+    background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.2);
+    border-radius: 10px; padding: 14px 16px; text-align: center;
+}
+.arch-box-title { font-size: 0.78rem; font-weight: 600; color: #a5b4fc; }
+.arch-box-sub   { font-size: 0.7rem; color: #64748b; }
+
+/* ─── About page cards ────────────────────────────────────────────────────── */
+.about-card {
+    background: linear-gradient(135deg, rgba(15,15,35,0.95), rgba(22,22,50,0.9));
+    border: 1px solid rgba(99,102,241,0.25);
+    border-radius: 16px; padding: 28px 32px; margin-bottom: 24px;
+}
+.about-card h3 { color: #a5b4fc; font-size: 1.15rem; margin-top: 0; }
+.about-card p  { color: #94a3b8; line-height: 1.75; font-size: 0.9rem; }
+
+.stat-val {
+    font-size: 2rem; font-weight: 800;
+    background: linear-gradient(135deg, #a5b4fc, #06b6d4);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.stat-lbl { font-size: 0.8rem; color: #64748b; margin-top: 2px; }
+
+.team-card {
+    background: rgba(15,15,35,0.9); border: 1px solid rgba(99,102,241,0.2);
+    border-radius: 14px; padding: 24px; text-align: center;
+}
+.team-name { font-weight: 700; font-size: 1.05rem; color: #e0e0f5; margin: 10px 0 4px; }
+.team-role { font-size: 0.82rem; color: #06b6d4; }
+
+/* ─── Timeline ────────────────────────────────────────────────────────────── */
+.timeline-item { display: flex; gap: 16px; margin-bottom: 20px; }
+.timeline-dot  {
+    width: 12px; height: 12px; min-width: 12px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border-radius: 50%; margin-top: 5px;
+}
+.timeline-text { font-size: 0.88rem; color: #94a3b8; line-height: 1.6; }
+.timeline-date { font-size: 0.75rem; color: #4a5568; font-weight: 600; margin-bottom: 2px; }
+
+/* ─── Utilities ───────────────────────────────────────────────────────────── */
+a.ext-link { color: #06b6d4; text-decoration: none; font-weight: 500; }
+a.ext-link:hover { text-decoration: underline; }
+
+.fancy-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(99,102,241,0.4), transparent);
+    margin: 32px 0;
+}

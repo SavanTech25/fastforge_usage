@@ -1,0 +1,297 @@
+import streamlit as st
+import subprocess, shutil, zipfile, tempfile, os, sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from controller.sidebar import load_css, render_sidebar
+
+ASSETS = Path(__file__).parent.parent / "assets"
+
+st.set_page_config(page_title="Generate — FastForge ⚡", page_icon="⚡", layout="wide")
+load_css()
+
+# ── Sidebar ──────────────────────────────────────────
+render_sidebar()
+
+st.markdown('<div class="page-title">⚡ Project Generator</div>', unsafe_allow_html=True)
+st.markdown('<div class="page-sub">Fill in the form, preview the commands, then download your generated project.</div>', unsafe_allow_html=True)
+
+# ── Tabs ──────────────────────────────────────────────────────────────────────
+tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
+    "🚀 Init Project",
+    "🧩 Entity",
+    "🌿 Init ETL",
+    "📐 dbt Model",
+    "🤖 AI Service",
+    "🔄 Sync Script",
+    "📊 Dashboard",
+])
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TAB 1 — fastforge init
+# ─────────────────────────────────────────────────────────────────────────────
+with tab1:
+    st.markdown('<div class="info-box">🚀 <b>fastforge init</b> bootstraps a full FastAPI project with JWT auth, rate limiting, background scheduler, WebSocket manager, and a production-ready Makefile. Choose your database engine below.</div>', unsafe_allow_html=True)
+    c1, c2 = st.columns(2, gap="large")
+    with c1:
+        proj_name = st.text_input("Project name", value="my_project", key="init_name", help="Snake_case name for your project folder")
+        db_engine = st.selectbox("Database engine", ["sqlite", "postgresql", "mysql", "mongodb"], key="init_db",
+            help="sqlite → no server needed | postgresql/mysql → SQL | mongodb → NoSQL/Motor")
+    with c2:
+        st.markdown("### What gets generated")
+        st.markdown("""
+            - `app/main.py` — FastAPI entry point with lifecycle hooks
+            - `src/<name>/entity/` — DB models
+            - `src/<name>/schema/` — Pydantic models
+            - `src/<name>/controller/` — Business logic
+            - `src/<name>/router/` — API routes
+            - `src/<name>/middleware/` — JWTBearer
+            - `src/<name>/utils/` — limiter, scheduler, CRUD factory, WS manager
+            - `pyproject.toml`, `Makefile`, `.env`
+        """)
+
+    cmd_init = f"fastforge init {proj_name} --db {db_engine}"
+    st.markdown("**Generated command:**")
+    st.markdown(f'<div class="cmd-box">{cmd_init}</div>', unsafe_allow_html=True)
+    st.markdown("**After running:**")
+    st.code(f"cd {proj_name}\nmake install\nsource .venv/bin/activate\nmake run", language="bash")
+
+    if st.button("🚀 Generate & Download Project", key="btn_init", type="primary"):
+        with st.spinner("Generating project..."):
+            with tempfile.TemporaryDirectory() as tmpdir:
+                result = subprocess.run(
+                    ["fastforge", "init", proj_name, "--db", db_engine],
+                    cwd=tmpdir, capture_output=True, text=True
+                )
+                proj_path = Path(tmpdir) / proj_name
+                if result.returncode == 0 and proj_path.exists():
+                    zip_path = Path(tmpdir) / f"{proj_name}.zip"
+                    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+                        for fp in proj_path.rglob("*"):
+                            if fp.is_file():
+                                zf.write(fp, fp.relative_to(tmpdir))
+                    st.success(f"✅ Project `{proj_name}` generated!")
+                    st.download_button("⬇️ Download ZIP", zip_path.read_bytes(),
+                                       file_name=f"{proj_name}.zip", mime="application/zip")
+                    with st.expander("📋 CLI output"):
+                        st.code(result.stdout)
+                else:
+                    st.error("❌ Generation failed. Make sure FastForge is installed globally via `uv tool install git+https://github.com/SavanTech25/fastforge.git`")
+                    st.code(result.stderr)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TAB 2 — fastforge make:entity
+# ─────────────────────────────────────────────────────────────────────────────
+with tab2:
+    st.markdown('<div class="info-box">🧩 <b>fastforge make:entity</b> generates the Model, Pydantic Schema, Controller, and Router for a given entity. Run this from inside a FastForge project.</div>', unsafe_allow_html=True)
+    c1, c2 = st.columns(2, gap="large")
+    with c1:
+        ent_name = st.text_input("Entity name (PascalCase)", value="User", key="ent_name")
+        no_router = st.checkbox("Skip router generation (--no-router)", key="ent_no_router")
+        no_ctrl   = st.checkbox("Skip controller generation (--no-controller)", key="ent_no_ctrl")
+    with c2:
+        st.markdown("**Field syntax:** `name:type[:modifier]`")
+        st.markdown("""
+| Type | Description |
+|------|-------------|
+| `string` | VARCHAR / str |
+| `int` | Integer |
+| `float` | Float |
+| `bool` | Boolean |
+| `text` | Long text |
+| `date` | Date only |
+| `datetime` | Full timestamp |
+
+**Modifiers:** `hash` · `encrypt` · `nullable` · `fk=ModelName`
+""")
+
+    st.markdown("**Add fields:**")
+    if "ent_fields" not in st.session_state:
+        st.session_state.ent_fields = [{"name": "email", "type": "string", "modifier": "hash"},
+                                        {"name": "is_active", "type": "bool", "modifier": ""}]
+    
+    field_types = ["string","int","float","bool","text","date","datetime"]
+    field_mods  = ["","hash","encrypt","nullable"]
+
+    for i, f in enumerate(st.session_state.ent_fields):
+        fc1, fc2, fc3, fc4 = st.columns([3,2,2,1])
+        with fc1:
+            st.session_state.ent_fields[i]["name"] = st.text_input("Name", value=f["name"], key=f"fn_{i}", label_visibility="collapsed")
+        with fc2:
+            idx = field_types.index(f["type"]) if f["type"] in field_types else 0
+            st.session_state.ent_fields[i]["type"] = st.selectbox("Type", field_types, index=idx, key=f"ft_{i}", label_visibility="collapsed")
+        with fc3:
+            mod_idx = field_mods.index(f["modifier"]) if f["modifier"] in field_mods else 0
+            st.session_state.ent_fields[i]["modifier"] = st.selectbox("Modifier", field_mods, index=mod_idx, key=f"fm_{i}", label_visibility="collapsed")
+        with fc4:
+            if st.button("🗑️", key=f"fdel_{i}") and len(st.session_state.ent_fields) > 1:
+                st.session_state.ent_fields.pop(i); st.rerun()
+
+    if st.button("➕ Add field", key="add_field"):
+        st.session_state.ent_fields.append({"name": "field", "type": "string", "modifier": ""}); st.rerun()
+
+    fields_str = " ".join(
+        f"{f['name']}:{f['type']}" + (f":{f['modifier']}" if f['modifier'] else "")
+        for f in st.session_state.ent_fields if f["name"]
+    )
+    flags = ("--no-router " if no_router else "") + ("--no-controller" if no_ctrl else "")
+    cmd_ent = f"fastforge make:entity {ent_name} {fields_str} {flags}".strip()
+    st.markdown("**Generated command:**")
+    st.markdown(f'<div class="cmd-box">{cmd_ent}</div>', unsafe_allow_html=True)
+    st.info("⚠️ Run this command from the **root of your FastForge project** (where `src/` lives).")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TAB 3 — fastforge init:etl
+# ─────────────────────────────────────────────────────────────────────────────
+with tab3:
+    st.markdown('<div class="info-box">🌿 <b>fastforge init:etl</b> scaffolds a complete dbt project inside your FastForge project, with your chosen architecture and data warehouse connector.</div>', unsafe_allow_html=True)
+    c1, c2 = st.columns(2, gap="large")
+    with c1:
+        etl_name = st.text_input("dbt project name", value="my_project_etl", key="etl_name")
+        etl_archi = st.selectbox("Architecture style", ["medallion","default","star"], key="etl_archi",
+            help="medallion → bronze/silver/gold | default → stg/int/mart | star → raw/dim/fact")
+        etl_conn  = st.selectbox("Warehouse connector", ["postgres","local","snowflake","bigquery"], key="etl_conn",
+            help="local → DuckDB (no server) | postgres → Supabase/RDS | snowflake/bigquery → cloud DWH")
+    with c2:
+        layers = {"medallion": ["bronze","silver","gold"], "default": ["stg","int","mart"], "star": ["raw","dim","fact"]}
+        lyr = layers[etl_archi]
+        st.markdown(f"**Layers generated for `{etl_archi}`:**")
+        for l in lyr:
+            st.markdown(f"- `models/{l}/`")
+        st.markdown("**Also includes:** `dbt_project.yml`, `profiles.yml`, `packages.yml`, `schema.yml`, `exposures.yml`, snapshots, seeds, macros")
+        if etl_conn == "local":
+            st.markdown("📦 **Install:** `uv pip install dbt-duckdb`")
+        elif etl_conn == "postgres":
+            st.markdown("📦 **Install:** `uv pip install dbt-postgres`")
+        elif etl_conn == "snowflake":
+            st.markdown("📦 **Install:** `uv pip install dbt-snowflake`")
+        elif etl_conn == "bigquery":
+            st.markdown("📦 **Install:** `uv pip install dbt-bigquery`")
+
+    cmd_etl = f"fastforge init:etl {etl_name} --archi {etl_archi} --connector {etl_conn}"
+    st.markdown("**Generated command:**")
+    st.markdown(f'<div class="cmd-box">{cmd_etl}</div>', unsafe_allow_html=True)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TAB 4 — fastforge make:dbt
+# ─────────────────────────────────────────────────────────────────────────────
+with tab4:
+    st.markdown('<div class="info-box">📐 <b>fastforge make:dbt</b> quickly scaffolds a single dbt model (SQL or Python) inside an existing ETL project.</div>', unsafe_allow_html=True)
+    c1, c2 = st.columns(2, gap="large")
+    with c1:
+        dbt_model = st.text_input("Model name (snake_case)", value="fact_orders", key="dbt_model")
+        dbt_layer = st.text_input("Layer (e.g. bronze, silver, mart)", value="silver", key="dbt_layer")
+        dbt_view  = st.checkbox("Materialize as view (--view)", key="dbt_view")
+        dbt_incr  = st.checkbox("Incremental model (--incremental)", key="dbt_incr")
+        dbt_py    = st.checkbox("Python model (--python)", key="dbt_py")
+    with c2:
+        st.markdown("**Examples:**")
+        st.code("fastforge make:dbt stg_users --layer stg\nfastforge make:dbt fact_revenue --view --layer mart\nfastforge make:dbt ml_features --python --incremental --layer gold", language="bash")
+
+    flags_dbt = []
+    if dbt_view: flags_dbt.append("--view")
+    if dbt_incr: flags_dbt.append("--incremental")
+    if dbt_py:   flags_dbt.append("--python")
+    if dbt_layer: flags_dbt.append(f"--layer {dbt_layer}")
+    cmd_dbt = f"fastforge make:dbt {dbt_model} {' '.join(flags_dbt)}".strip()
+    st.markdown("**Generated command:**")
+    st.markdown(f'<div class="cmd-box">{cmd_dbt}</div>', unsafe_allow_html=True)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TAB 5 — fastforge make:service
+# ─────────────────────────────────────────────────────────────────────────────
+with tab5:
+    st.markdown('<div class="info-box">🤖 <b>fastforge make:service</b> generates a production-ready AI service and its FastAPI router. It auto-installs provider/vector-store hints.</div>', unsafe_allow_html=True)
+    c1, c2 = st.columns(2, gap="large")
+    with c1:
+        svc_name = st.text_input("Service name (PascalCase)", value="HelpdeskBot", key="svc_name")
+        svc_type = st.selectbox("Service type", ["rag","agent","agentic","ocr"], key="svc_type",
+            help="rag → RAG with vector store | agent → tool-calling | agentic → LangGraph | ocr → Vision/extraction")
+        svc_prov = st.selectbox("AI Provider", ["openai","anthropic","mistral","gemini","azure"], key="svc_prov")
+        svc_vec  = st.selectbox("Vector store (RAG only)", ["chroma","qdrant","supabase","upstash"], key="svc_vec",
+            disabled=(svc_type != "rag"))
+    with c2:
+        st.markdown("**What gets generated:**")
+        st.markdown(f"""
+- `src/<project>/service/{svc_name.lower()}.py` — AI service class
+- `src/<project>/router/r_{svc_name.lower()}.py` — FastAPI router with `POST /{svc_name.lower()}` endpoint (JWT protected)
+- `app/main.py` updated with the new router import
+
+**Required packages will be shown after generation.**
+""")
+        type_desc = {
+            "rag": "Retrieval-Augmented Generation — chunks documents, embeds them in a vector store, retrieves context for LLM answers.",
+            "agent": "Tool-calling agent — LLM with access to defined tools/functions.",
+            "agentic": "LangGraph workflow — stateful multi-step agent with a state graph.",
+            "ocr": "Vision/OCR extraction — send images or PDFs, extract structured data.",
+        }
+        st.info(type_desc.get(svc_type, ""))
+
+    vs_part = f" --vector-store {svc_vec}" if svc_type == "rag" else ""
+    cmd_svc = f"fastforge make:service {svc_name} --type {svc_type} --provider {svc_prov}{vs_part}"
+    st.markdown("**Generated command:**")
+    st.markdown(f'<div class="cmd-box">{cmd_svc}</div>', unsafe_allow_html=True)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TAB 6 — fastforge make:sync
+# ─────────────────────────────────────────────────────────────────────────────
+with tab6:
+    st.markdown('<div class="info-box">🔄 <b>fastforge make:sync</b> scaffolds a Python ELT script that replicates data from a source DB to a destination. Includes APScheduler for continuous execution.</div>', unsafe_allow_html=True)
+    c1, c2 = st.columns(2, gap="large")
+    with c1:
+        sync_name = st.text_input("Sync script name (PascalCase)", value="MongoToPg", key="sync_name")
+        sync_src  = st.selectbox("Source database", ["mongodb","postgresql","mysql","sqlite"], key="sync_src")
+        sync_dst  = st.selectbox("Destination database", ["postgres","mysql","sqlite","bigquery"], key="sync_dst")
+    with c2:
+        st.markdown("**Generated files:**")
+        st.markdown(f"""
+- `src/<project>/sync/{sync_name.lower()}.py` — Sync script with APScheduler
+- `src/<project>/sync/requirements.txt` — pymongo, pandas, sqlalchemy, apscheduler…
+""")
+        st.markdown("**Install and run:**")
+        st.code(f"cd src/<project>/sync\nuv pip install -r requirements.txt\npython {sync_name.lower()}.py", language="bash")
+
+    cmd_sync = f"fastforge make:sync {sync_name} --source {sync_src} --dest {sync_dst}"
+    st.markdown("**Generated command:**")
+    st.markdown(f'<div class="cmd-box">{cmd_sync}</div>', unsafe_allow_html=True)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TAB 7 — fastforge make:dashboard
+# ─────────────────────────────────────────────────────────────────────────────
+with tab7:
+    st.markdown('<div class="info-box">📊 <b>fastforge make:dashboard</b> generates a multi-page Streamlit dashboard inside <code>app/dashboard/</code> and updates your Makefile with <code>make dashboard</code>.</div>', unsafe_allow_html=True)
+    c1, c2 = st.columns(2, gap="large")
+    with c1:
+        st.markdown("**Add dashboard pages:**")
+        preset_pages = st.multiselect(
+            "Choose preset pages",
+            ["Atelier","Analytics","Chatbot"],
+            default=["Atelier","Analytics"],
+            key="dash_pages",
+            help="Atelier → entity/service manager | Analytics → charts | Chatbot → AI chat UI"
+        )
+        custom_pages = st.text_input("Additional custom pages (comma-separated)", value="", key="dash_custom",
+            help="e.g. Reports, Settings, Users")
+        all_pages = list(preset_pages)
+        if custom_pages.strip():
+            all_pages += [p.strip() for p in custom_pages.split(",") if p.strip()]
+    with c2:
+        st.markdown("**Pages that will be generated:**")
+        for i, p in enumerate(all_pages, 1):
+            st.markdown(f"- `{i}_{p}.py`")
+        st.markdown("**Launch after generation:**")
+        st.code("make dashboard", language="bash")
+
+    pages_str = " ".join(all_pages)
+    cmd_dash = f"fastforge make:dashboard {pages_str}"
+    st.markdown("**Generated command:**")
+    st.markdown(f'<div class="cmd-box">{cmd_dash}</div>', unsafe_allow_html=True)
+
+st.markdown("---")
+st.markdown("<div style='text-align:center;color:#4a5568;font-size:0.82rem'>⚡ FastForge · by <a href='https://savantech.org' style='color:#06b6d4'>SavanTech</a> · <a href='mailto:savantech25@gmail.com' style='color:#06b6d4'>savantech25@gmail.com</a></div>", unsafe_allow_html=True)
