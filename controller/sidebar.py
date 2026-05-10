@@ -1,5 +1,5 @@
 """
-Shared sidebar renderer and CSS loader for all FastForge Streamlit pages.
+Shared sidebar renderer and CSS loader for all Fast-Stack-Forge Streamlit pages.
 Call load_css() then render_sidebar() at the top of each page.
 """
 import streamlit as st
@@ -8,7 +8,7 @@ from pathlib import Path
 ASSETS = Path(__file__).parent.parent / "assets"
 
 LINKEDIN_URL = "https://www.linkedin.com/in/wendyam-yameogo"
-GITHUB_URL   = "https://github.com/SavanTech25/fastforge"
+GITHUB_URL   = "https://github.com/SavanTech25/fast-stack-forge"
 WEBSITE_URL  = "https://savantech.org"
 EMAIL        = "savantech25@gmail.com"
 
@@ -33,7 +33,7 @@ def render_sidebar() -> None:
         # ── 1. Resources ──────────────────────────────────────────────────────
         st.markdown("### 🔗 Resources")
         st.markdown(f"""
-- [📦 FastForge GitHub]({GITHUB_URL})
+- [📦 Fast-Stack-Forge GitHub]({GITHUB_URL})
 - [🌐 SavanTech]({WEBSITE_URL})
 - [📖 FastAPI Docs](https://fastapi.tiangolo.com/)
 - [⚡ uv Docs](https://docs.astral.sh/uv/)
@@ -48,7 +48,7 @@ def render_sidebar() -> None:
             f"""
 <div style="font-size:0.78rem;color:#64748b;line-height:1.9;padding-bottom:8px">
     <div style="color:#a5b4fc;font-weight:700;font-size:0.85rem;margin-bottom:6px">
-        ⚡ FastForge <span style="color:#4a5568;font-weight:400">v1.0.0</span>
+        ⚡ Fast-Stack-Forge <span style="color:#4a5568;font-weight:400">v1.0.0</span>
     </div>
     Propulsé par&nbsp;
     <a href="{WEBSITE_URL}" target="_blank"

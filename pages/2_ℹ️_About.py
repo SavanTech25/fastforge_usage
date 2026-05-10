@@ -7,7 +7,7 @@ from controller.sidebar import load_css, render_sidebar
 
 ASSETS = Path(__file__).parent.parent / "assets"
 
-st.set_page_config(page_title="About — FastForge ⚡", page_icon="⚡", layout="wide")
+st.set_page_config(page_title="About — Fast-Stack-Forge ⚡", page_icon="⚡", layout="wide")
 load_css()
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
@@ -22,7 +22,7 @@ st.markdown('<div class="page-sub">We build open-source developer tools that acc
 # ── Stats ─────────────────────────────────────────────────────────────────────
 s1, s2, s3, s4 = st.columns(4)
 for col, val, lbl in [
-    (s1, "1.0.0", "FastForge Version"),
+    (s1, "1.0.0", "Fast-Stack-Forge Version"),
     (s2, "8+",    "CLI Commands"),
     (s3, "2025",  "Founded"),
     (s4, "🌍 BF", "Based in Burkina Faso"),
@@ -49,7 +49,7 @@ with mc1:
         not infrastructure wiring.
         </p>
         <p>
-        FastForge is our answer — a Symfony-inspired scaffolding CLI that generates everything from
+        Fast-Stack-Forge is our answer — a Symfony-inspired scaffolding CLI that generates everything from
         entities and AI services to full ETL pipelines in seconds. We ship tools that empower developers
         in Francophone Africa and beyond to build at the speed of thought.
         </p>
@@ -58,14 +58,14 @@ with mc1:
 
     st.markdown("""
     <div class="about-card">
-        <h3>⚡ FastForge — Our Flagship Tool</h3>
+        <h3>⚡ Fast-Stack-Forge — Our Flagship Tool</h3>
         <p>
-        FastForge is an open-source CLI scaffolder for FastAPI inspired by Symfony's MakerBundle.
+        Fast-Stack-Forge is an open-source CLI scaffolder for FastAPI inspired by Symfony's MakerBundle.
         With a single command you get a structured project with JWT auth, rate limiting, background tasks,
         WebSocket management, and optional AI services (RAG, Agents, OCR) all wired together.
         </p>
         <p>
-        We built FastForge to work seamlessly with <code>uv</code> for ultra-fast package management
+        We built Fast-Stack-Forge to work seamlessly with <code>uv</code> for ultra-fast package management
         and <code>dbt</code> for analytics engineering — making it the ideal foundation for any
         AI-powered backend project.
         </p>
@@ -98,13 +98,13 @@ with mc2:
     """, unsafe_allow_html=True)
 
     timeline = [
-        ("2025 Q1", "🚀 FastForge v1.0 — init, make:entity, JWT, rate limiting"),
+        ("2025 Q1", "🚀 Fast-Stack-Forge v1.0 — init, make:entity, JWT, rate limiting"),
         ("2025 Q2", "🤖 make:service — RAG, Agent, Agentic, OCR AI services"),
         ("2025 Q2", "🌿 init:etl & make:dbt — full dbt scaffolding"),
         ("2025 Q3", "📊 make:dashboard — Streamlit multi-page generator"),
         ("2025 Q3", "🔄 make:sync — ELT Python sync scripts"),
-        ("2025 Q4", "☁️ FastForge Cloud — hosted scaffolding & templates (coming soon)"),
-        ("2026",    "🌍 FastForge Hub — community template marketplace"),
+        ("2025 Q4", "☁️ Fast-Stack-Forge Cloud — hosted scaffolding & templates (coming soon)"),
+        ("2026",    "🌍 Fast-Stack-Forge Hub — community template marketplace"),
     ]
     for date, text in timeline:
         st.markdown(f"""
@@ -143,7 +143,7 @@ lk1, lk2, lk3, lk4 = st.columns(4)
 
 for col, icon, label, href in [
     (lk1, "🐙", "GitHub",    "https://github.com/SavanTech25"),
-    (lk2, "📦", "FastForge", "https://github.com/SavanTech25/fastforge"),
+    (lk2, "📦", "Fast-Stack-Forge", "https://github.com/SavanTech25/fast-stack-forge"),
     (lk3, "📧", "Email",     "mailto:savantech25@gmail.com"),
     (lk4, "🌐", "Website",   "https://savantech.org"),
 ]:
@@ -157,6 +157,6 @@ for col, icon, label, href in [
 st.markdown('<div class="fancy-divider"></div>', unsafe_allow_html=True)
 st.markdown("""
 <div style='text-align:center;color:#4a5568;font-size:0.82rem;padding:8px 0'>
-    ⚡ FastForge v1.0.0 · Built with ❤️ by <a href='https://savantech.org' style='color:#06b6d4'>SavanTech</a> · Burkina Faso 🇧🇫 ·
+    ⚡ Fast-Stack-Forge v1.0.0 · Built with ❤️ by <a href='https://savantech.org' style='color:#06b6d4'>SavanTech</a> · Burkina Faso 🇧🇫 ·
     <a href='mailto:savantech25@gmail.com' style='color:#06b6d4'>savantech25@gmail.com</a>
 </div>""", unsafe_allow_html=True)

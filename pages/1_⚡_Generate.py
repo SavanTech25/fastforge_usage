@@ -7,7 +7,7 @@ from controller.sidebar import load_css, render_sidebar
 
 ASSETS = Path(__file__).parent.parent / "assets"
 
-st.set_page_config(page_title="Generate — FastForge ⚡", page_icon="⚡", layout="wide")
+st.set_page_config(page_title="Generate — Fast-Stack-Forge ⚡", page_icon="⚡", layout="wide")
 load_css()
 
 # ── Sidebar ──────────────────────────────────────────
@@ -28,10 +28,10 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
 ])
 
 # ─────────────────────────────────────────────────────────────────────────────
-# TAB 1 — fastforge init
+# TAB 1 — fast-stack-forge init
 # ─────────────────────────────────────────────────────────────────────────────
 with tab1:
-    st.markdown('<div class="info-box">🚀 <b>fastforge init</b> bootstraps a full FastAPI project with JWT auth, rate limiting, background scheduler, WebSocket manager, and a production-ready Makefile. Choose your database engine below.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="info-box">🚀 <b>fast-stack-forge init</b> bootstraps a full FastAPI project with JWT auth, rate limiting, background scheduler, WebSocket manager, and a production-ready Makefile. Choose your database engine below.</div>', unsafe_allow_html=True)
     c1, c2 = st.columns(2, gap="large")
     with c1:
         proj_name = st.text_input("Project name", value="my_project", key="init_name", help="Snake_case name for your project folder")
@@ -50,7 +50,7 @@ with tab1:
             - `pyproject.toml`, `Makefile`, `.env`
         """)
 
-    cmd_init = f"fastforge init {proj_name} --db {db_engine}"
+    cmd_init = f"fast-stack-forge init {proj_name} --db {db_engine}"
     st.markdown("**Generated command:**")
     st.markdown(f'<div class="cmd-box">{cmd_init}</div>', unsafe_allow_html=True)
     st.markdown("**After running:**")
@@ -60,7 +60,7 @@ with tab1:
         with st.spinner("Generating project..."):
             with tempfile.TemporaryDirectory() as tmpdir:
                 result = subprocess.run(
-                    ["fastforge", "init", proj_name, "--db", db_engine],
+                    ["fast-stack-forge", "init", proj_name, "--db", db_engine],
                     cwd=tmpdir, capture_output=True, text=True
                 )
                 proj_path = Path(tmpdir) / proj_name
@@ -76,15 +76,15 @@ with tab1:
                     with st.expander("📋 CLI output"):
                         st.code(result.stdout)
                 else:
-                    st.error("❌ Generation failed. Make sure FastForge is installed globally via `uv tool install git+https://github.com/SavanTech25/fastforge.git`")
+                    st.error("❌ Generation failed. Make sure Fast-Stack-Forge is installed globally via `uv tool install fast-stack-forge`")
                     st.code(result.stderr)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# TAB 2 — fastforge make:entity
+# TAB 2 — fast-stack-forge make:entity
 # ─────────────────────────────────────────────────────────────────────────────
 with tab2:
-    st.markdown('<div class="info-box">🧩 <b>fastforge make:entity</b> generates the Model, Pydantic Schema, Controller, and Router for a given entity. Run this from inside a FastForge project.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="info-box">🧩 <b>fast-stack-forge make:entity</b> generates the Model, Pydantic Schema, Controller, and Router for a given entity. Run this from inside a Fast-Stack-Forge project.</div>', unsafe_allow_html=True)
     c1, c2 = st.columns(2, gap="large")
     with c1:
         ent_name = st.text_input("Entity name (PascalCase)", value="User", key="ent_name")
@@ -136,17 +136,17 @@ with tab2:
         for f in st.session_state.ent_fields if f["name"]
     )
     flags = ("--no-router " if no_router else "") + ("--no-controller" if no_ctrl else "")
-    cmd_ent = f"fastforge make:entity {ent_name} {fields_str} {flags}".strip()
+    cmd_ent = f"fast-stack-forge make:entity {ent_name} {fields_str} {flags}".strip()
     st.markdown("**Generated command:**")
     st.markdown(f'<div class="cmd-box">{cmd_ent}</div>', unsafe_allow_html=True)
-    st.info("⚠️ Run this command from the **root of your FastForge project** (where `src/` lives).")
+    st.info("⚠️ Run this command from the **root of your Fast-Stack-Forge project** (where `src/` lives).")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# TAB 3 — fastforge init:etl
+# TAB 3 — fast-stack-forge init:etl
 # ─────────────────────────────────────────────────────────────────────────────
 with tab3:
-    st.markdown('<div class="info-box">🌿 <b>fastforge init:etl</b> scaffolds a complete dbt project inside your FastForge project, with your chosen architecture and data warehouse connector.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="info-box">🌿 <b>fast-stack-forge init:etl</b> scaffolds a complete dbt project inside your Fast-Stack-Forge project, with your chosen architecture and data warehouse connector.</div>', unsafe_allow_html=True)
     c1, c2 = st.columns(2, gap="large")
     with c1:
         etl_name = st.text_input("dbt project name", value="my_project_etl", key="etl_name")
@@ -170,16 +170,16 @@ with tab3:
         elif etl_conn == "bigquery":
             st.markdown("📦 **Install:** `uv pip install dbt-bigquery`")
 
-    cmd_etl = f"fastforge init:etl {etl_name} --archi {etl_archi} --connector {etl_conn}"
+    cmd_etl = f"fast-stack-forge init:etl {etl_name} --archi {etl_archi} --connector {etl_conn}"
     st.markdown("**Generated command:**")
     st.markdown(f'<div class="cmd-box">{cmd_etl}</div>', unsafe_allow_html=True)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# TAB 4 — fastforge make:dbt
+# TAB 4 — fast-stack-forge make:dbt
 # ─────────────────────────────────────────────────────────────────────────────
 with tab4:
-    st.markdown('<div class="info-box">📐 <b>fastforge make:dbt</b> quickly scaffolds a single dbt model (SQL or Python) inside an existing ETL project.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="info-box">📐 <b>fast-stack-forge make:dbt</b> quickly scaffolds a single dbt model (SQL or Python) inside an existing ETL project.</div>', unsafe_allow_html=True)
     c1, c2 = st.columns(2, gap="large")
     with c1:
         dbt_model = st.text_input("Model name (snake_case)", value="fact_orders", key="dbt_model")
@@ -189,23 +189,23 @@ with tab4:
         dbt_py    = st.checkbox("Python model (--python)", key="dbt_py")
     with c2:
         st.markdown("**Examples:**")
-        st.code("fastforge make:dbt stg_users --layer stg\nfastforge make:dbt fact_revenue --view --layer mart\nfastforge make:dbt ml_features --python --incremental --layer gold", language="bash")
+        st.code("fast-stack-forge make:dbt stg_users --layer stg\nfast-stack-forge make:dbt fact_revenue --view --layer mart\nfast-stack-forge make:dbt ml_features --python --incremental --layer gold", language="bash")
 
     flags_dbt = []
     if dbt_view: flags_dbt.append("--view")
     if dbt_incr: flags_dbt.append("--incremental")
     if dbt_py:   flags_dbt.append("--python")
     if dbt_layer: flags_dbt.append(f"--layer {dbt_layer}")
-    cmd_dbt = f"fastforge make:dbt {dbt_model} {' '.join(flags_dbt)}".strip()
+    cmd_dbt = f"fast-stack-forge make:dbt {dbt_model} {' '.join(flags_dbt)}".strip()
     st.markdown("**Generated command:**")
     st.markdown(f'<div class="cmd-box">{cmd_dbt}</div>', unsafe_allow_html=True)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# TAB 5 — fastforge make:service
+# TAB 5 — fast-stack-forge make:service
 # ─────────────────────────────────────────────────────────────────────────────
 with tab5:
-    st.markdown('<div class="info-box">🤖 <b>fastforge make:service</b> generates a production-ready AI service and its FastAPI router. It auto-installs provider/vector-store hints.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="info-box">🤖 <b>fast-stack-forge make:service</b> generates a production-ready AI service and its FastAPI router. It auto-installs provider/vector-store hints.</div>', unsafe_allow_html=True)
     c1, c2 = st.columns(2, gap="large")
     with c1:
         svc_name = st.text_input("Service name (PascalCase)", value="HelpdeskBot", key="svc_name")
@@ -232,16 +232,16 @@ with tab5:
         st.info(type_desc.get(svc_type, ""))
 
     vs_part = f" --vector-store {svc_vec}" if svc_type == "rag" else ""
-    cmd_svc = f"fastforge make:service {svc_name} --type {svc_type} --provider {svc_prov}{vs_part}"
+    cmd_svc = f"fast-stack-forge make:service {svc_name} --type {svc_type} --provider {svc_prov}{vs_part}"
     st.markdown("**Generated command:**")
     st.markdown(f'<div class="cmd-box">{cmd_svc}</div>', unsafe_allow_html=True)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# TAB 6 — fastforge make:sync
+# TAB 6 — fast-stack-forge make:sync
 # ─────────────────────────────────────────────────────────────────────────────
 with tab6:
-    st.markdown('<div class="info-box">🔄 <b>fastforge make:sync</b> scaffolds a Python ELT script that replicates data from a source DB to a destination. Includes APScheduler for continuous execution.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="info-box">🔄 <b>fast-stack-forge make:sync</b> scaffolds a Python ELT script that replicates data from a source DB to a destination. Includes APScheduler for continuous execution.</div>', unsafe_allow_html=True)
     c1, c2 = st.columns(2, gap="large")
     with c1:
         sync_name = st.text_input("Sync script name (PascalCase)", value="MongoToPg", key="sync_name")
@@ -256,16 +256,16 @@ with tab6:
         st.markdown("**Install and run:**")
         st.code(f"cd src/<project>/sync\nuv pip install -r requirements.txt\npython {sync_name.lower()}.py", language="bash")
 
-    cmd_sync = f"fastforge make:sync {sync_name} --source {sync_src} --dest {sync_dst}"
+    cmd_sync = f"fast-stack-forge make:sync {sync_name} --source {sync_src} --dest {sync_dst}"
     st.markdown("**Generated command:**")
     st.markdown(f'<div class="cmd-box">{cmd_sync}</div>', unsafe_allow_html=True)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# TAB 7 — fastforge make:dashboard
+# TAB 7 — fast-stack-forge make:dashboard
 # ─────────────────────────────────────────────────────────────────────────────
 with tab7:
-    st.markdown('<div class="info-box">📊 <b>fastforge make:dashboard</b> generates a multi-page Streamlit dashboard inside <code>app/dashboard/</code> and updates your Makefile with <code>make dashboard</code>.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="info-box">📊 <b>fast-stack-forge make:dashboard</b> generates a multi-page Streamlit dashboard inside <code>app/dashboard/</code> and updates your Makefile with <code>make dashboard</code>.</div>', unsafe_allow_html=True)
     c1, c2 = st.columns(2, gap="large")
     with c1:
         st.markdown("**Add dashboard pages:**")
@@ -289,9 +289,9 @@ with tab7:
         st.code("make dashboard", language="bash")
 
     pages_str = " ".join(all_pages)
-    cmd_dash = f"fastforge make:dashboard {pages_str}"
+    cmd_dash = f"fast-stack-forge make:dashboard {pages_str}"
     st.markdown("**Generated command:**")
     st.markdown(f'<div class="cmd-box">{cmd_dash}</div>', unsafe_allow_html=True)
 
 st.markdown("---")
-st.markdown("<div style='text-align:center;color:#4a5568;font-size:0.82rem'>⚡ FastForge · by <a href='https://savantech.org' style='color:#06b6d4'>SavanTech</a> · <a href='mailto:savantech25@gmail.com' style='color:#06b6d4'>savantech25@gmail.com</a></div>", unsafe_allow_html=True)
+st.markdown("<div style='text-align:center;color:#4a5568;font-size:0.82rem'>⚡ Fast-Stack-Forge · by <a href='https://savantech.org' style='color:#06b6d4'>SavanTech</a> · <a href='mailto:savantech25@gmail.com' style='color:#06b6d4'>savantech25@gmail.com</a></div>", unsafe_allow_html=True)
