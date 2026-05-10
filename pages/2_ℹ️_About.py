@@ -139,13 +139,14 @@ st.markdown('<div class="fancy-divider"></div>', unsafe_allow_html=True)
 
 # ── Contact & Links ───────────────────────────────────────────────────────────
 st.markdown("### 📬 Get in Touch")
-lk1, lk2, lk3, lk4 = st.columns(4)
+lk1, lk2, lk3, lk4, lk5 = st.columns(5)
 
 for col, icon, label, href in [
     (lk1, "🐙", "GitHub",    "https://github.com/SavanTech25"),
     (lk2, "📦", "Fast-Stack-Forge", "https://github.com/SavanTech25/fast-stack-forge"),
-    (lk3, "📧", "Email",     "mailto:savantech25@gmail.com"),
-    (lk4, "🌐", "Website",   "https://savantech.org"),
+    (lk3, "🐍", "PyPI",      "https://pypi.org/project/fast-stack-forge/"),
+    (lk4, "📧", "Email",     "mailto:savantech25@gmail.com"),
+    (lk5, "🌐", "Website",   "https://savantech.org"),
 ]:
     with col:
         st.markdown(f"""

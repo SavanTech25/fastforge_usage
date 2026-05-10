@@ -169,12 +169,13 @@ with req_col2:
     st.markdown("""
     <div class="req-card">
         <div class="req-title">📦 Fast-Stack-Forge itself</div>
-        <div class="req-desc">Install globally via uv tool — no virtual env needed for the CLI itself.</div>
+        <div class="req-desc">Install globally via pip or uv tool — no virtual env needed for the CLI itself.</div>
     </div>
     """, unsafe_allow_html=True)
     st.markdown("""
     <div class="code-block"><span class="code-comment"># Install Fast-Stack-Forge globally</span>
-<span class="code-cmd">uv tool install</span> <span class="code-arg">fast-stack-forge</span>
+<span class="code-cmd">pip install</span> <span class="code-arg">fast-stack-forge</span>
+<span class="code-comment"># Or with uv: uv tool install fast-stack-forge</span>
 
 <span class="code-comment"># Verify installation</span>
 <span class="code-cmd">fast-stack-forge</span> <span class="code-flag">--version</span>
@@ -194,7 +195,7 @@ st.markdown('<div class="fancy-divider"></div>', unsafe_allow_html=True)
 st.markdown('<div class="section-title">⚡ Quick Start Workflow</div>', unsafe_allow_html=True)
 
 steps = [
-    ("1️⃣", "Install Fast-Stack-Forge", "uv tool install fast-stack-forge"),
+    ("1️⃣", "Install Fast-Stack-Forge", "pip install fast-stack-forge"),
     ("2️⃣", "Init your project", "fast-stack-forge init my_api --db postgresql"),
     ("3️⃣", "Install deps & run", "cd my_api && make install && make run"),
     ("4️⃣", "Generate an entity", "fast-stack-forge make:entity User name:string email:string:hash role:string"),

@@ -34,6 +34,7 @@ def render_sidebar() -> None:
         st.markdown("### 🔗 Resources")
         st.markdown(f"""
 - [📦 Fast-Stack-Forge GitHub]({GITHUB_URL})
+- [🐍 PyPI Package](https://pypi.org/project/fast-stack-forge/)
 - [🌐 SavanTech]({WEBSITE_URL})
 - [📖 FastAPI Docs](https://fastapi.tiangolo.com/)
 - [⚡ uv Docs](https://docs.astral.sh/uv/)
