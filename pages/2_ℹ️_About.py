@@ -22,7 +22,7 @@ st.markdown('<div class="page-sub">We build open-source developer tools that acc
 # ── Stats ─────────────────────────────────────────────────────────────────────
 s1, s2, s3, s4 = st.columns(4)
 for col, val, lbl in [
-    (s1, "1.0.0", "Fast-Stack-Forge Version"),
+    (s1, "1.0.3", "Fast-Stack-Forge Version"),
     (s2, "10+",   "CLI Commands"),
     (s3, "2025",  "Founded"),
     (s4, "🌍 BF", "Based in Burkina Faso"),

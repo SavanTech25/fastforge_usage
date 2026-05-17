@@ -49,7 +49,7 @@ def render_sidebar() -> None:
             f"""
 <div style="font-size:0.78rem;color:#64748b;line-height:1.9;padding-bottom:8px">
     <div style="color:#a5b4fc;font-weight:700;font-size:0.85rem;margin-bottom:6px">
-        ⚡ Fast-Stack-Forge <span style="color:#4a5568;font-weight:400">v1.0.0</span>
+        ⚡ Fast-Stack-Forge <span style="color:#4a5568;font-weight:400">v1.0.3</span>
     </div>
     Propulsé par&nbsp;
     <a href="{WEBSITE_URL}" target="_blank"
