@@ -23,7 +23,7 @@ st.markdown('<div class="page-sub">We build open-source developer tools that acc
 s1, s2, s3, s4 = st.columns(4)
 for col, val, lbl in [
     (s1, "1.0.0", "Fast-Stack-Forge Version"),
-    (s2, "8+",    "CLI Commands"),
+    (s2, "10+",   "CLI Commands"),
     (s3, "2025",  "Founded"),
     (s4, "🌍 BF", "Based in Burkina Faso"),
 ]:
@@ -104,7 +104,8 @@ with mc2:
         ("2025 Q3", "📊 make:dashboard — Streamlit multi-page generator"),
         ("2025 Q3", "🔄 make:sync — ELT Python sync scripts"),
         ("2025 Q4", "☁️ Fast-Stack-Forge Cloud — hosted scaffolding & templates (coming soon)"),
-        ("2026",    "🌍 Fast-Stack-Forge Hub — community template marketplace"),
+        ("2026 Q1", "🔬 AstroData DS — init:ds-data & init:ds-make skeletons for data science"),
+        ("2026 Q2", "🌍 Fast-Stack-Forge Hub — community template marketplace"),
     ]
     for date, text in timeline:
         st.markdown(f"""

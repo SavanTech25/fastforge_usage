@@ -28,8 +28,10 @@ render_sidebar()
 st.markdown("""
 <div class="hero-section">
   <div class="hero-title">Fast-Stack-Forge ⚡</div>
-  <div class="hero-sub">A powerful, Symfony-style CLI scaffolder for FastAPI — built for speed, built for scale.</div>
+  <div class="hero-sub">A powerful, MakerBundle-style CLI scaffolder for FastAPI & Data Science — built for speed, built for scale.</div>
   <span class="badge">🚀 FastAPI</span>
+  <span class="badge">🔬 AstroData DS</span>
+  <span class="badge">📓 Jupyter Notebooks</span>
   <span class="badge">🐍 Python</span>
   <span class="badge">⚡ uv</span>
   <span class="badge">🌿 dbt</span>
@@ -61,15 +63,23 @@ with col1:
 
 with col2:
     st.markdown("""
-        <div class="arch-box" style="margin-bottom:10px;">
+        <div class="arch-box" style="margin-bottom:8px;">
             <div class="arch-box-title">🏗️ fast-stack-forge init my_project</div>
             <div class="arch-box-sub">Scaffolds a full FastAPI project in seconds</div>
         </div>
-        <div class="arch-box" style="margin-bottom:10px;">
+        <div class="arch-box" style="margin-bottom:8px;">
+            <div class="arch-box-title">🔬 fast-stack-forge init:ds-data my_ds</div>
+            <div class="arch-box-sub">Initializes an AstroData Data Science project skeleton</div>
+        </div>
+        <div class="arch-box" style="margin-bottom:8px;">
+            <div class="arch-box-title">🧬 fast-stack-forge init:ds-make</div>
+            <div class="arch-box-sub">Injects FastAPI + Streamlit to existing DS project</div>
+        </div>
+        <div class="arch-box" style="margin-bottom:8px;">
             <div class="arch-box-title">🧩 fast-stack-forge make:entity User</div>
             <div class="arch-box-sub">Generates model + schema + controller + router</div>
         </div>
-        <div class="arch-box" style="margin-bottom:10px;">
+        <div class="arch-box" style="margin-bottom:8px;">
             <div class="arch-box-title">🤖 fast-stack-forge make:service Bot --type rag</div>
             <div class="arch-box-sub">Scaffolds a production-ready RAG service</div>
         </div>
@@ -89,6 +99,16 @@ commands = [
         "icon": "🚀",
         "title": "fast-stack-forge init <name> --db <engine>",
         "desc": "Bootstrap a new FastAPI project with the complete directory structure, Makefile, pyproject.toml, JWT middleware, rate limiting, scheduling, WebSocket manager, and a CRUD utility router. Choose between sqlite, postgresql, mysql, or mongodb as your database engine."
+    },
+    {
+        "icon": "🔬",
+        "title": "fast-stack-forge init:ds-data <name> [--api/--no-api] [--data/--no-data]",
+        "desc": "Initialize a complete AstroData-style data science repository structure. Features interactive Python versioning, license selections, metadata customization, optional raw/processed data architecture, and an optional companion FastAPI project."
+    },
+    {
+        "icon": "🧬",
+        "title": "fast-stack-forge init:ds-make [project_dir]",
+        "desc": "Automatically detect your Python package structure inside an existing AstroData project's src/ and inject a fully functional FastAPI + Streamlit backend & dashboard, plus Docker and docker-compose configurations."
     },
     {
         "icon": "🧩",

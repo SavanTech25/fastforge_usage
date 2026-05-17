@@ -17,8 +17,10 @@ st.markdown('<div class="page-title">⚡ Project Generator</div>', unsafe_allow_
 st.markdown('<div class="page-sub">Fill in the form, preview the commands, then download your generated project.</div>', unsafe_allow_html=True)
 
 # ── Tabs ──────────────────────────────────────────────────────────────────────
-tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
+tab1, tab_ds_data, tab_ds_make, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "🚀 Init Project",
+    "🔬 Init DS Project",
+    "🧬 Add DS Backend",
     "🧩 Entity",
     "🌿 Init ETL",
     "📐 dbt Model",
@@ -78,6 +80,170 @@ with tab1:
                 else:
                     st.error("❌ Generation failed. Make sure Fast-Stack-Forge is installed globally via `uv tool install fast-stack-forge`")
                     st.code(result.stderr)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TAB DS DATA — fast-stack-forge init:ds-data
+# ─────────────────────────────────────────────────────────────────────────────
+with tab_ds_data:
+    st.markdown('<div class="info-box">🔬 <b>fast-stack-forge init:ds-data</b> scaffolds a structured AstroData data science repository. Includes environment config via python-decouple and logging via loguru.</div>', unsafe_allow_html=True)
+    dsc1, dsc2 = st.columns(2, gap="large")
+    with dsc1:
+        ds_name = st.text_input("Project name", value="my_ds_project", key="ds_name", help="Data science repository name (will be auto-sanitized)")
+        
+        # Flags
+        ds_api = st.checkbox("Include FastAPI skeleton inside package (--api)", value=True, key="ds_api",
+            help="Creates a FastAPI app inside src/<package>/api/")
+        ds_data = st.checkbox("Include ETL raw/processed data folders (--data)", value=True, key="ds_data",
+            help="Creates data/raw, data/interim, data/processed, and data/external folders")
+        
+        # Companion project
+        ds_companion = st.checkbox("Create separate companion FastAPI project", value=False, key="ds_companion",
+            help="Asks you to bootstrap a separate backend project alongside (named <name>_api)")
+        ds_companion_db = st.selectbox("Companion DB", ["sqlite", "postgresql", "mysql", "mongodb"], key="ds_companion_db", disabled=not ds_companion)
+        
+        # Stdin interactive selections
+        c_pymajor = sys.version_info
+        py_versions = [f"{c_pymajor.major}.{c_pymajor.minor}", f"{c_pymajor.major}.{c_pymajor.minor - 1}", f"{c_pymajor.major}.{c_pymajor.minor - 2}"]
+        ds_pyver = st.selectbox("Python version", py_versions, index=0, key="ds_pyver")
+        
+        ds_os = st.checkbox("Is this project open source?", value=True, key="ds_os")
+        ds_license = st.selectbox("License", ["MIT", "BSD-3-Clause", "Apache-2.0", "GPL-3.0"], key="ds_license", disabled=not ds_os)
+        
+        ds_desc = st.text_input("Project description", value="", placeholder="A data science project...", key="ds_desc")
+        ds_author = st.text_input("Author name", value="", key="ds_author")
+        ds_email = st.text_input("Author email", value="", key="ds_email", disabled=not ds_author.strip())
+        
+    with dsc2:
+        st.markdown("### What gets generated")
+        st.markdown("""
+            - `src/<package_name>/` — Package root
+                - `data/`, `features/`, `models/`, `visualization/`, `front/`
+                - `api/` — FastAPI skeleton (if enabled)
+            - `notebooks/`, `scripts/`, `docs/`
+            - `tests/` — Pytest suite
+            - `app/<package_name>_app.py` — Streamlit app
+            - `pyproject.toml`, `Makefile`, `.env.example`, `.pre-commit-config.yaml`
+            - `docker-compose.yml`, `dockerfiles/` (if API enabled)
+        """)
+        
+    # Build generated command representation
+    api_flag = " --api" if ds_api else ""
+    data_flag = " --data" if ds_data else ""
+    cmd_ds_data = f"fast-stack-forge init:ds-data {ds_name}{api_flag}{data_flag}"
+    
+    st.markdown("**Generated CLI command (will trigger interactive prompts):**")
+    st.markdown(f'<div class="cmd-box">{cmd_ds_data}</div>', unsafe_allow_html=True)
+    st.markdown("**Interactive Prompts Configured:**")
+    st.code(f"""Companion FastAPI project? {'Yes' if ds_companion else 'No'}
+Selected DB (if companion): {ds_companion_db}
+Python version: {ds_pyver}
+Open Source: {'Yes' if ds_os else 'No'} (License: {ds_license if ds_os else 'Proprietary'})
+Description: {ds_desc or 'A data science project: ' + ds_name}
+Author: {ds_author or 'None'} (Email: {ds_email or 'None'})""", language="text")
+
+    if st.button("🚀 Generate & Download DS Project", key="btn_ds_data", type="primary"):
+        with st.spinner("Generating AstroData project..."):
+            with tempfile.TemporaryDirectory() as tmpdir:
+                # Build the interactive input sequence
+                stdin_lines = []
+                
+                # 1. Companion API
+                if ds_companion:
+                    stdin_lines.append("y")
+                    db_idx = ["sqlite", "postgresql", "mysql", "mongodb"].index(ds_companion_db) + 1
+                    stdin_lines.append(str(db_idx))
+                else:
+                    stdin_lines.append("n")
+                
+                # 2. Python version choice
+                py_idx = py_versions.index(ds_pyver) + 1
+                stdin_lines.append(str(py_idx))
+                
+                # 3. Open source
+                if ds_os:
+                    stdin_lines.append("y")
+                    stdin_lines.append(ds_license)
+                else:
+                    stdin_lines.append("n")
+                
+                # 4. Description
+                stdin_lines.append(ds_desc.strip())
+                
+                # 5. Author name
+                stdin_lines.append(ds_author.strip())
+                
+                # 6. Author email
+                if ds_author.strip():
+                    stdin_lines.append(ds_email.strip())
+                
+                stdin_input_str = "\n".join(stdin_lines) + "\n"
+                
+                # Let's run
+                args = ["fast-stack-forge", "init:ds-data", ds_name]
+                if ds_api:
+                    args.append("--api")
+                if ds_data:
+                    args.append("--data")
+                    
+                result = subprocess.run(
+                    args,
+                    cwd=tmpdir,
+                    input=stdin_input_str,
+                    capture_output=True,
+                    text=True
+                )
+                
+                # Check for output folders (sanitized name)
+                san_name = ds_name.strip().lower().replace(" ", "_").replace("-", "_")
+                zip_path = Path(tmpdir) / f"{san_name}_ds.zip"
+                
+                if result.returncode == 0:
+                    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+                        for fp in Path(tmpdir).rglob("*"):
+                            if fp.is_file() and fp != zip_path:
+                                zf.write(fp, fp.relative_to(tmpdir))
+                                
+                    if zip_path.exists() and zip_path.stat().st_size > 100:
+                        st.success(f"✅ AstroData project `{ds_name}` successfully generated!")
+                        st.download_button("⬇️ Download ZIP", zip_path.read_bytes(),
+                                           file_name=f"{san_name}_ds.zip", mime="application/zip")
+                        with st.expander("📋 CLI output"):
+                            st.code(result.stdout)
+                    else:
+                        st.error("❌ Generation succeeded but no files were written.")
+                else:
+                    st.error("❌ Generation failed. Make sure Fast-Stack-Forge is installed globally.")
+                    st.code(result.stderr)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TAB DS MAKE — fast-stack-forge init:ds-make
+# ─────────────────────────────────────────────────────────────────────────────
+with tab_ds_make:
+    st.markdown('<div class="info-box">🧬 <b>fast-stack-forge init:ds-make</b> upgrades an existing AstroData data science project by automatically injecting a FastAPI and a Streamlit dashboard skeleton, plus Docker files.</div>', unsafe_allow_html=True)
+    dmc1, dmc2 = st.columns(2, gap="large")
+    with dmc1:
+        ds_make_dir = st.text_input("Project directory path", value=".", key="ds_make_dir",
+            help="Path to the existing AstroData project root (containing src/)")
+    with dmc2:
+        st.markdown("### What gets added/updated")
+        st.markdown("""
+            - `src/<package_name>/api/` — FastAPI REST API (main, upload middleware, routes: base, system, greetings)
+            - `app/<package_name>_app.py` — Pre-wired Streamlit dashboard
+            - `.streamlit/config.toml` — Theme & port configuration
+            - `docker-compose.yml` — Container architecture
+            - `dockerfiles/Dockerfile.api` & `Dockerfile.app`
+            - `tests/test_api.py` — Endpoint test suite
+            - `pyproject.toml` — Appends `fastapi`, `uvicorn`, `pydantic` etc. and adds entrypoints
+            - `Makefile` — Injects running targets (`run_api` and `run`)
+        """)
+        
+    cmd_ds_make = f"fast-stack-forge init:ds-make {ds_make_dir}".strip()
+    st.markdown("**Generated command:**")
+    st.markdown(f'<div class="cmd-box">{cmd_ds_make}</div>', unsafe_allow_html=True)
+    st.info("⚠️ Run this command inside your existing AstroData project folder where `src/` lives.")
+
 
 
 # ─────────────────────────────────────────────────────────────────────────────
