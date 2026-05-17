@@ -7,6 +7,54 @@ from controller.sidebar import load_css, render_sidebar
 
 ASSETS = Path(__file__).parent.parent / "assets"
 
+def run_fastforge_cli(args, stdin_input=None, cwd=None):
+    """
+    Executes a fast-stack-forge command by running the Python package module
+    directly via `sys.executable -m fast_stack_forge.cli`.
+    This guarantees it uses the active virtual environment package containing the latest code,
+    bypassing the global system command completely to prevent PATH version conflicts.
+    
+    If fast_stack_forge is not installed or importable, it automatically runs
+    `pip install -e` on the local package directory to register it first.
+    """
+    # 1. Ensure the package is installed in editable mode in this python environment
+    try:
+        # pyrefly: ignore [missing-import]
+        import fast_stack_forge
+    except ImportError:
+        pkg_dir = Path(__file__).parent.parent.parent / "fastforge"
+        if pkg_dir.exists():
+            subprocess.run([sys.executable, "-m", "pip", "install", "-e", str(pkg_dir)], capture_output=True)
+            
+    # 2. Run the command using python -m
+    cmd = [sys.executable, "-m", "fast_stack_forge.cli"] + args
+    
+    result = subprocess.run(
+        cmd,
+        cwd=cwd,
+        input=stdin_input,
+        capture_output=True,
+        text=True
+    )
+    
+    # 3. If there is a click "No such command" or import error, try updating the package and re-run
+    if result.returncode != 0 and ("No such command" in result.stderr or "ModuleNotFoundError" in result.stderr):
+        pkg_dir = Path(__file__).parent.parent.parent / "fastforge"
+        if pkg_dir.exists():
+            # Force update/re-install
+            subprocess.run([sys.executable, "-m", "pip", "install", "-U", "-e", str(pkg_dir)], capture_output=True)
+            # Re-run
+            result = subprocess.run(
+                cmd,
+                cwd=cwd,
+                input=stdin_input,
+                capture_output=True,
+                text=True
+            )
+            
+    return result
+
+
 st.set_page_config(page_title="Generate — Fast-Stack-Forge ⚡", page_icon="⚡", layout="wide")
 load_css()
 
@@ -61,10 +109,7 @@ with tab1:
     if st.button("🚀 Generate & Download Project", key="btn_init", type="primary"):
         with st.spinner("Generating project..."):
             with tempfile.TemporaryDirectory() as tmpdir:
-                result = subprocess.run(
-                    ["fast-stack-forge", "init", proj_name, "--db", db_engine],
-                    cwd=tmpdir, capture_output=True, text=True
-                )
+                result = run_fastforge_cli(["init", proj_name, "--db", db_engine], cwd=tmpdir)
                 proj_path = Path(tmpdir) / proj_name
                 if result.returncode == 0 and proj_path.exists():
                     zip_path = Path(tmpdir) / f"{proj_name}.zip"
@@ -180,19 +225,13 @@ Author: {ds_author or 'None'} (Email: {ds_email or 'None'})""", language="text")
                 stdin_input_str = "\n".join(stdin_lines) + "\n"
                 
                 # Let's run
-                args = ["fast-stack-forge", "init:ds-data", ds_name]
+                args = ["init:ds-data", ds_name]
                 if ds_api:
                     args.append("--api")
                 if ds_data:
                     args.append("--data")
                     
-                result = subprocess.run(
-                    args,
-                    cwd=tmpdir,
-                    input=stdin_input_str,
-                    capture_output=True,
-                    text=True
-                )
+                result = run_fastforge_cli(args, stdin_input=stdin_input_str, cwd=tmpdir)
                 
                 # Check for output folders (sanitized name)
                 san_name = ds_name.strip().lower().replace(" ", "_").replace("-", "_")
