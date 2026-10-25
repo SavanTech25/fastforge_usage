@@ -5,6 +5,8 @@ Call load_css() then render_sidebar() at the top of each page.
 import streamlit as st
 from pathlib import Path
 
+from controller.forge import PYPI_URL, version
+
 ASSETS = Path(__file__).parent.parent / "assets"
 
 LINKEDIN_URL = "https://www.linkedin.com/in/wendyam-yameogo"
@@ -22,46 +24,36 @@ def load_css() -> None:
 
 def render_sidebar() -> None:
     """
-    Render the shared sidebar:
-      1. SavanTech logo (small, top)
-      2. Resources links
-      3. Credits — Propulsé par SavanTech / Wendyam YAMEOGO
-    Note: Streamlit already renders the page navigation automatically above
-    the sidebar content, so we do NOT add page links manually here.
+    Render the shared sidebar under Streamlit's automatic page navigation:
+      1. Product name and installed CLI version
+      2. Documentation links
+      3. Credits, SavanTech / Wendyam YAMEOGO
     """
+    st.logo(str(ASSETS / "savantech_logo.png"), link=WEBSITE_URL)
     with st.sidebar:
-        # ── 1. Resources ──────────────────────────────────────────────────────
-        st.markdown("### 🔗 Resources")
-        st.markdown(f"""
-- [📦 Fast-Stack-Forge GitHub]({GITHUB_URL})
-- [🐍 PyPI Package](https://pypi.org/project/fast-stack-forge/)
-- [🌐 SavanTech]({WEBSITE_URL})
-- [📖 FastAPI Docs](https://fastapi.tiangolo.com/)
-- [⚡ uv Docs](https://docs.astral.sh/uv/)
-- [🌿 dbt Docs](https://docs.getdbt.com/)
-- [🤖 LangChain](https://python.langchain.com/)
-""")
-
-        st.markdown("---")
-
-        # ── 2. Credits ────────────────────────────────────────────────────────
         st.markdown(
             f"""
-<div style="font-size:0.78rem;color:#64748b;line-height:1.9;padding-bottom:8px">
-    <div style="color:#a5b4fc;font-weight:700;font-size:0.85rem;margin-bottom:6px">
-        ⚡ Fast-Stack-Forge <span style="color:#4a5568;font-weight:400">v1.0.3</span>
-    </div>
-    Propulsé par&nbsp;
-    <a href="{WEBSITE_URL}" target="_blank"
-       style="color:#06b6d4;text-decoration:none;font-weight:600">SavanTech</a>
-    <br>
-    <span style="color:#94a3b8">👨‍💻 <strong>Wendyam YAMEOGO</strong></span>
-    <br>
-    <a href="{LINKEDIN_URL}" target="_blank"
-       style="color:#0a66c2;text-decoration:none;font-weight:500">🔗 LinkedIn</a>
-    &nbsp;·&nbsp;
-    <a href="mailto:{EMAIL}"
-       style="color:#06b6d4;text-decoration:none">✉️ {EMAIL}</a>
+<div class="side-brand">fast-stack-forge</div>
+<div class="side-version">v{version()} installed</div>
+<div class="side-links">
+  <a href="{GITHUB_URL}" target="_blank">Source on GitHub</a>
+  <a href="{PYPI_URL}" target="_blank">Package on PyPI</a>
+  <a href="https://docs.astral.sh/uv/" target="_blank">uv docs</a>
+  <a href="https://fastapi.tiangolo.com/" target="_blank">FastAPI docs</a>
+  <a href="https://docs.getdbt.com/" target="_blank">dbt docs</a>
+  <a href="https://docs.databricks.com/dev-tools/bundles/" target="_blank">Databricks Asset Bundles</a>
+  <a href="https://python.langchain.com/" target="_blank">LangChain docs</a>
+</div>
+""",
+            unsafe_allow_html=True,
+        )
+        st.divider()
+        st.markdown(
+            f"""
+<div class="side-credit">
+  Built by <a href="{WEBSITE_URL}" target="_blank">SavanTech</a><br>
+  Wendyam YAMEOGO<br>
+  <a href="{LINKEDIN_URL}" target="_blank">LinkedIn</a> · <a href="mailto:{EMAIL}">{EMAIL}</a>
 </div>
 """,
             unsafe_allow_html=True,

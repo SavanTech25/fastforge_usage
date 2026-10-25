@@ -4,284 +4,212 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from controller.sidebar import load_css, render_sidebar
-
-ASSETS = Path(__file__).parent / "assets"
+from controller import forge
 
 # ── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="Fast-Stack-Forge ⚡",
+    page_title="fast-stack-forge",
     page_icon="⚡",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="auto",
 )
 load_css()
-
-
-# ── Sidebar ───────────────────────────────────────────────────────────────────
 render_sidebar()
+forge.require_package()
 
 
+def section(title: str, intro: str = "") -> None:
+    st.markdown(f'<div class="sec"><h2>{title}</h2>{f"<p>{intro}</p>" if intro else ""}</div>', unsafe_allow_html=True)
 
 
-
-
-st.markdown("""
-<div class="hero-section">
-  <div class="hero-title">Fast-Stack-Forge ⚡</div>
-  <div class="hero-sub">A powerful, MakerBundle-style CLI scaffolder for FastAPI & Data Science — built for speed, built for scale.</div>
-  <span class="badge">🚀 FastAPI</span>
-  <span class="badge">🔬 AstroData DS</span>
-  <span class="badge">📓 Jupyter Notebooks</span>
-  <span class="badge">🐍 Python</span>
-  <span class="badge">⚡ uv</span>
-  <span class="badge">🌿 dbt</span>
-  <span class="badge">🤖 AI Services</span>
-  <span class="badge">🔗 LangChain</span>
-  <span class="badge">🗄️ SQLAlchemy</span>
-  <span class="badge">🍃 MongoDB</span>
+# ── Hero: the wizard ──────────────────────────────────────────────────────────
+hero_text, hero_term = st.columns([5, 6], gap="large")
+with hero_text:
+    st.markdown(
+        """
+<div class="hero">
+  <div class="name">fast-stack-forge</div>
+  <h1>Answer a few questions. Get a project that runs.</h1>
+  <p>A Symfony-style scaffolder for FastAPI backends, dbt projects, Databricks bundles,
+  AI services and data science repos. Every project comes managed with <code>uv</code>
+  and a <code>Makefile</code>, ready for <code>make install</code>.</p>
 </div>
-""", unsafe_allow_html=True)
+""",
+        unsafe_allow_html=True,
+    )
+    b1, b2 = st.columns([1, 1])
+    with b1:
+        st.page_link("pages/1_⚡_Generate.py", label="Generate a project", icon=":material/bolt:")
+    with b2:
+        st.page_link("https://github.com/SavanTech25/fast-stack-forge", label="Read the source", icon=":material/code:")
+
+with hero_term:
+    st.markdown(
+        forge.terminal(
+            [
+                "$ fast-stack-forge new",
+                "What do you want to create?",
+                "  [1] fastapi     FastAPI backend",
+                "  [2] dbt         dbt project",
+                "  [3] databricks  Databricks Asset Bundle",
+                "  [4] ds          Data science project",
+                ("Choice [1]: ", "2"),
+                ("dbt project name [my_dbt_project]: ", "analytics"),
+                ("Model architecture [1]: ", "2  medallion"),
+                ("Warehouse adapter [1]: ", "1  duckdb"),
+                "",
+                "     created  analytics/dbt_project.yml",
+                "     created  analytics/models/gold/gld_customers.sql",
+                "     created  analytics/Makefile",
+                "$ cd analytics && make install && make build",
+            ],
+            title="~/code",
+            animate=True,
+        ),
+        unsafe_allow_html=True,
+    )
+
+st.markdown('<p class="lead">Install it once, globally. <b>Python 3.11+</b> and <b>uv</b> are the only requirements.</p>', unsafe_allow_html=True)
+st.code("uv tool install fast-stack-forge", language="bash")
 
 
-# ── What is Fast-Stack-Forge ─────────────────────────────────────────────────────────
-st.markdown('<div class="section-title">🧰 What is Fast-Stack-Forge?</div>', unsafe_allow_html=True)
-
-col1, col2 = st.columns([3, 2], gap="large")
-with col1:
-    st.markdown("""
-    **Fast-Stack-Forge** is a CLI tool inspired by Symfony's MakerBundle that bootstraps and accelerates FastAPI development.  
-    Instead of spending hours creating boilerplate, you run a single command and get a **production-ready project structure** complete with:
-
-    - 🔐 JWT Authentication middleware
-    - ⚡ Rate limiting with `slowapi`
-    - 📆 Background scheduling with `apscheduler`
-    - 🔌 WebSocket connection manager
-    - 📦 Dependency management via `uv`
-    - 🤖 AI Services (RAG, Agents, OCR) ready to go
-    - 🌿 dbt ETL pipelines for analytics
-    """)
-
-with col2:
-    st.markdown("""
-        <div class="arch-box" style="margin-bottom:8px;">
-            <div class="arch-box-title">🏗️ fast-stack-forge init my_project</div>
-            <div class="arch-box-sub">Scaffolds a full FastAPI project in seconds</div>
-        </div>
-        <div class="arch-box" style="margin-bottom:8px;">
-            <div class="arch-box-title">🔬 fast-stack-forge init:ds-data my_ds</div>
-            <div class="arch-box-sub">Initializes an AstroData Data Science project skeleton</div>
-        </div>
-        <div class="arch-box" style="margin-bottom:8px;">
-            <div class="arch-box-title">🧬 fast-stack-forge init:ds-make</div>
-            <div class="arch-box-sub">Injects FastAPI + Streamlit to existing DS project</div>
-        </div>
-        <div class="arch-box" style="margin-bottom:8px;">
-            <div class="arch-box-title">🧩 fast-stack-forge make:entity User</div>
-            <div class="arch-box-sub">Generates model + schema + controller + router</div>
-        </div>
-        <div class="arch-box" style="margin-bottom:8px;">
-            <div class="arch-box-title">🤖 fast-stack-forge make:service Bot --type rag</div>
-            <div class="arch-box-sub">Scaffolds a production-ready RAG service</div>
-        </div>
-        <div class="arch-box">
-            <div class="arch-box-title">🌿 fast-stack-forge init:etl my_dbt --archi medallion</div>
-            <div class="arch-box-sub">Full dbt project with bronze/silver/gold layers</div>
-        </div>
-    """, unsafe_allow_html=True)
+# ── What it builds ────────────────────────────────────────────────────────────
+section(
+    "Four kinds of project",
+    "Each <code>init</code> command asks only for what you leave out. Pass every option as a flag, "
+    "or add <code>-y</code> to accept the defaults, and it runs unattended in CI.",
+)
 
 
-# ── Commands Overview ─────────────────────────────────────────────────────────
-st.markdown('<div class="fancy-divider"></div>', unsafe_allow_html=True)
-st.markdown('<div class="section-title">📋 All Commands</div>', unsafe_allow_html=True)
+def opts(values) -> str:
+    return ", ".join(f"<span>{v}</span>" for v in values)
 
-commands = [
-    {
-        "icon": "🚀",
-        "title": "fast-stack-forge init <name> --db <engine>",
-        "desc": "Bootstrap a new FastAPI project with the complete directory structure, Makefile, pyproject.toml, JWT middleware, rate limiting, scheduling, WebSocket manager, and a CRUD utility router. Choose between sqlite, postgresql, mysql, or mongodb as your database engine."
-    },
-    {
-        "icon": "🔬",
-        "title": "fast-stack-forge init:ds-data <name> [--api/--no-api] [--data/--no-data]",
-        "desc": "Initialize a complete AstroData-style data science repository structure. Features interactive Python versioning, license selections, metadata customization, optional raw/processed data architecture, and an optional companion FastAPI project."
-    },
-    {
-        "icon": "🧬",
-        "title": "fast-stack-forge init:ds-make [project_dir]",
-        "desc": "Automatically detect your Python package structure inside an existing AstroData project's src/ and inject a fully functional FastAPI + Streamlit backend & dashboard, plus Docker and docker-compose configurations."
-    },
-    {
-        "icon": "🧩",
-        "title": "fast-stack-forge make:entity <Name> <fields>",
-        "desc": "Auto-generate the Entity (model), Schema (Pydantic), Controller (business logic), and Router (API routes) for a given entity. Supports field types: string, int, float, bool, text, date, datetime — and modifiers: hash, encrypt, nullable, fk=ModelName."
-    },
-    {
-        "icon": "🌿",
-        "title": "fast-stack-forge init:etl <name> --archi <style> --connector <db>",
-        "desc": "Initialize a complete dbt project inside your project's src/ directory. Choose an architecture style: default (stg/int/mart), medallion (bronze/silver/gold), or star (raw/dim/fact). Supports DuckDB, Snowflake, BigQuery, and PostgreSQL connectors."
-    },
-    {
-        "icon": "📐",
-        "title": "fast-stack-forge make:dbt <model> [--view] [--incremental] [--layer]",
-        "desc": "Quickly scaffold a dbt SQL or Python model in the correct layer. Use --view for view materialization, --incremental to add incremental logic, --python for a Python-based model, and --layer to place it in a specific architecture layer (e.g., bronze, silver, gold)."
-    },
-    {
-        "icon": "🤖",
-        "title": "fast-stack-forge make:service <Name> --type <t> --provider <p>",
-        "desc": "Generate a production-ready AI service and its FastAPI router. Types: rag (Retrieval-Augmented Generation), agent (tool-calling), agentic (LangGraph workflow), ocr (Vision extraction). Providers: openai, anthropic, mistral, gemini, azure. For RAG, choose a vector store: chroma, qdrant, supabase, or upstash."
-    },
-    {
-        "icon": "🔄",
-        "title": "fast-stack-forge make:sync <Name> --source <db> --dest <db>",
-        "desc": "Scaffold a Python ELT sync script that replicates data from an operational database (MongoDB, PostgreSQL, etc.) to an analytical warehouse. Includes APScheduler boilerplate for continuous execution and pandas-based document flattening."
-    },
-    {
-        "icon": "📊",
-        "title": "fast-stack-forge make:dashboard [pages...]",
-        "desc": "Generate a multi-page Streamlit dashboard inside your project's app/dashboard/ directory. Specify page names like Atelier, Analytics, Chatbot. Automatically updates your Makefile with a 'make dashboard' target to launch the dashboard with uv."
-    },
-    {
-        "icon": "🗑️",
-        "title": "fast-stack-forge make:discard <EntityName>",
-        "desc": "Remove a previously generated entity along with its associated schema, controller, and router files. Safely cleans up the scaffolded boilerplate without affecting the rest of your project."
-    },
+
+kinds = [
+    ("FastAPI backend", "Entities, JWT middleware, rate limiting, a background scheduler and a WebSocket manager.",
+     "init", "my_api", f"Databases: {opts(forge.DB_HELP)}"),
+    ("dbt project", "Seeds, models, tests and a snapshot that pass <code>dbt build</code> out of the box.",
+     "init:dbt", "analytics", f"Adapters: {opts(forge.ADAPTERS)}<br>Layouts: {opts(forge.ARCHITECTURES)}"),
+    ("Databricks bundle", "An Asset Bundle with dev and prod targets, a Unity Catalog schema and a daily job.",
+     "init:databricks", "lakehouse", f"Runtimes: {opts(f'{r} LTS' for r in forge.RUNTIMES)}<br>Tasks: {opts(forge.COMPONENTS)}"),
+    ("Data science repo", "AstroData layout with notebooks, a Streamlit app and an optional FastAPI service.",
+     "init:ds-data", "churn_study", "Options: <span>--api</span>, <span>--data</span>, licence, companion API"),
 ]
-
-for i in range(0, len(commands), 2):
-    cols = st.columns(2, gap="medium")
-    for j, col in enumerate(cols):
-        if i + j < len(commands):
-            cmd = commands[i + j]
-            with col:
-                st.markdown(f"""
-                <div class="cmd-card">
-                    <div class="cmd-icon">{cmd['icon']}</div>
-                    <div class="cmd-title">{cmd['title']}</div>
-                    <div class="cmd-desc">{cmd['desc']}</div>
-                </div>
-                """, unsafe_allow_html=True)
-    st.markdown("<br>", unsafe_allow_html=True)
+for col, (title, desc, cmd, example, options) in zip(st.columns(4, gap="medium"), kinds):
+    with col:
+        st.markdown(
+            f"""<div class="kind"><h3>{title}</h3><p>{desc}</p>
+<span class="cmd"><b>$</b> fast-stack-forge {cmd} {example}</span>
+<div class="opts">{options}</div></div>""",
+            unsafe_allow_html=True,
+        )
 
 
-# ── Minimum Requirements ──────────────────────────────────────────────────────
-st.markdown('<div class="fancy-divider"></div>', unsafe_allow_html=True)
-st.markdown('<div class="section-title">✅ Minimum Requirements</div>', unsafe_allow_html=True)
+# ── Grow an existing project ──────────────────────────────────────────────────
+section("Add to an existing project", "Run these from anywhere inside a generated project. They find the project root on their own.")
 
-req_col1, req_col2 = st.columns(2, gap="large")
-
-with req_col1:
-    st.markdown("""
-    <div class="req-card">
-        <div class="req-title">🐍 Python ≥ 3.11</div>
-        <div class="req-desc">Fast-Stack-Forge uses modern Python features. Python 3.11+ is required.</div>
-    </div>
-    <div class="req-card">
-        <div class="req-title">⚡ uv (Astral)</div>
-        <div class="req-desc">Fast-Stack-Forge uses uv for virtual environment management and ultra-fast dependency installation. Install via: <code>curl -LsSf https://astral.sh/uv/install.sh | sh</code></div>
-    </div>
-    <div class="req-card">
-        <div class="req-title">🗄️ Database (optional)</div>
-        <div class="req-desc">For PostgreSQL or MySQL projects, you'll need a running server. MongoDB projects need a running MongoDB instance or Atlas URI. SQLite requires no setup.</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-with req_col2:
-    st.markdown("""
-    <div class="req-card">
-        <div class="req-title">📦 Fast-Stack-Forge itself</div>
-        <div class="req-desc">Install globally via pip or uv tool — no virtual env needed for the CLI itself.</div>
-    </div>
-    """, unsafe_allow_html=True)
-    st.markdown("""
-    <div class="code-block"><span class="code-comment"># Install Fast-Stack-Forge globally</span>
-<span class="code-cmd">pip install</span> <span class="code-arg">fast-stack-forge</span>
-<span class="code-comment"># Or with uv: uv tool install fast-stack-forge</span>
-
-<span class="code-comment"># Verify installation</span>
-<span class="code-cmd">fast-stack-forge</span> <span class="code-flag">--version</span>
-
-<span class="code-comment"># Bootstrap your first project</span>
-<span class="code-cmd">fast-stack-forge init</span> <span class="code-arg">my_project</span> <span class="code-flag">--db postgresql</span>
-
-<span class="code-comment"># Install dependencies & run</span>
-<span class="code-cmd">cd</span> <span class="code-arg">my_project</span>
-<span class="code-cmd">make</span> <span class="code-arg">install</span>
-<span class="code-cmd">make</span> <span class="code-arg">run</span></div>
-    """, unsafe_allow_html=True)
+grow = [
+    ("make:entity", "Model, Pydantic schema, controller and router for an entity. Fields use <code>name:type[:modifier]</code>, with <code>hash</code>, <code>encrypt</code>, <code>nullable</code> and <code>fk=Model</code> modifiers."),
+    ("make:service", f"An AI service and its JWT-protected router: {', '.join(f'<code>{t}</code>' for t in forge.SERVICE_TYPES)}. Providers: {', '.join(forge.PROVIDERS)}."),
+    ("make:dbt", "A SQL or Python dbt model in the layer you choose, as a table, view or incremental model."),
+    ("make:dashboard", "A multi-page Streamlit dashboard in <code>app/dashboard/</code>, launched with <code>make dashboard</code>."),
+    ("make:sync", "An ELT script that copies MongoDB or an HTTP API into PostgreSQL or Upstash, on a schedule."),
+    ("init:ds-make", "Adds a FastAPI service, a Streamlit app and Docker files to an existing data science repo."),
+    ("make:discard", "Removes an entity's model, schema, controller and router."),
+]
+rows = "".join(f'<div class="cmd-row"><code>{name}</code><div>{desc}</div></div>' for name, desc in grow)
+st.markdown(f'<div class="cmd-list">{rows}</div>', unsafe_allow_html=True)
 
 
-# ── Quick Start Workflow ───────────────────────────────────────────────────────
-st.markdown('<div class="fancy-divider"></div>', unsafe_allow_html=True)
-st.markdown('<div class="section-title">⚡ Quick Start Workflow</div>', unsafe_allow_html=True)
+# ── Quick start ───────────────────────────────────────────────────────────────
+section("From zero to a running API")
 
 steps = [
-    ("1️⃣", "Install Fast-Stack-Forge", "pip install fast-stack-forge"),
-    ("2️⃣", "Init your project", "fast-stack-forge init my_api --db postgresql"),
-    ("3️⃣", "Install deps & run", "cd my_api && make install && make run"),
-    ("4️⃣", "Generate an entity", "fast-stack-forge make:entity User name:string email:string:hash role:string"),
-    ("5️⃣", "Add an AI service", "fast-stack-forge make:service ChatBot --type rag --provider openai --vector-store qdrant"),
-    ("6️⃣", "Add analytics (ETL)", "fast-stack-forge init:etl my_api_etl --archi medallion --connector postgres"),
-    ("7️⃣", "Generate dashboard", "fast-stack-forge make:dashboard Analytics Chatbot"),
+    ("Install the CLI", "uv tool install fast-stack-forge"),
+    ("Create the backend", "fast-stack-forge init my_api --db postgresql"),
+    ("Install and run it", "cd my_api && make install && make run"),
+    ("Add an entity", "fast-stack-forge make:entity User name:string email:string:hash is_active:bool"),
+    ("Add an AI service", "fast-stack-forge make:service HelpdeskBot --type rag --provider anthropic --vector-store qdrant"),
+    ("Add analytics", "fast-stack-forge init:dbt analytics --archi medallion --adapter postgres -y"),
 ]
-
-for icon, title, cmd in steps:
-    col_i, col_t, col_c = st.columns([0.5, 2, 4], gap="small")
-    with col_i:
-        st.markdown(f"<div style='font-size:1.4rem;padding-top:8px'>{icon}</div>", unsafe_allow_html=True)
-    with col_t:
-        st.markdown(f"<div style='font-weight:600;color:#a5b4fc;padding-top:12px'>{title}</div>", unsafe_allow_html=True)
-    with col_c:
+for i, (title, cmd) in enumerate(steps, 1):
+    c_title, c_cmd = st.columns([2, 5], gap="small")
+    with c_title:
+        st.markdown(f'<div class="step"><b>{i}</b><span>{title}</span></div>', unsafe_allow_html=True)
+    with c_cmd:
         st.code(cmd, language="bash")
 
-# ── Project Architecture ───────────────────────────────────────────────────────
-st.markdown('<div class="fancy-divider"></div>', unsafe_allow_html=True)
-st.markdown('<div class="section-title">🏗️ Generated Project Architecture</div>', unsafe_allow_html=True)
 
-arc_col1, arc_col2 = st.columns([2, 3], gap="large")
-with arc_col1:
-    st.markdown("When you run `fast-stack-forge init my_project`, here is the complete structure generated for you:")
-    st.code("""my_project/
+# ── Generated structure ───────────────────────────────────────────────────────
+section("What lands on disk")
+
+trees = {
+    "FastAPI": """my_api/
 ├── app/
-│   ├── main.py              ← FastAPI entrypoint
-│   └── dashboard/           ← Streamlit pages (make:dashboard)
-├── src/
-│   └── my_project/
-│       ├── entity/          ← Database models
-│       ├── schema/          ← Pydantic schemas
-│       ├── controller/      ← Business logic
-│       ├── router/          ← API routes
-│       ├── service/         ← AI services
-│       ├── data/            ← DB connection
-│       ├── middleware/      ← JWT middleware
-│       └── utils/
-│           ├── limiter.py   ← Rate limiting
-│           ├── scheduling.py← Background tasks
-│           ├── crud_router.py← CRUD factory
-│           └── connection_manager.py
+│   └── main.py              FastAPI entry point, lifecycle, rate limiter
+├── src/my_api/
+│   ├── entity/              ORM models (SQLAlchemy or Motor)
+│   ├── schema/              Pydantic models
+│   ├── controller/          business logic
+│   ├── router/              API routes
+│   ├── service/             AI services (make:service)
+│   ├── data/                database.py
+│   ├── middleware/          JWTBearer
+│   └── utils/               limiter, scheduling, crud_router, connection_manager
 ├── Makefile
 ├── pyproject.toml
-└── .env""", language="text")
+└── .env""",
+    "dbt": """analytics/                   --archi medallion --adapter duckdb
+├── dbt_project.yml
+├── profiles.yml             secrets read from environment variables
+├── packages.yml             dbt_utils
+├── models/
+│   ├── bronze/              brz_customers, brz_orders, _sources.yml
+│   ├── silver/              slv_customer_orders
+│   ├── gold/                gld_customers
+│   ├── schema.yml
+│   └── exposures.yml
+├── seeds/  snapshots/  tests/  macros/
+├── pyproject.toml  Makefile  .env.example""",
+    "Databricks": """lakehouse/
+├── databricks.yml              dev (default) and prod targets
+├── resources/
+│   ├── schema.yml              Unity Catalog schema
+│   ├── lakehouse_pipeline.yml  Lakeflow pipeline (--with pipeline)
+│   └── lakehouse_job.yml       ingest → refresh_pipeline → transform → dbt
+├── src/
+│   ├── notebooks/ingest.py     (--with notebook)
+│   ├── pipelines/              bronze / silver / gold tables
+│   └── lakehouse/main.py       Python wheel (--with wheel)
+├── dbt_project/                (--with dbt)
+├── tests/                      pytest through Databricks Connect
+├── pyproject.toml  Makefile  .env.example""",
+    "Data science": """churn_study/
+├── src/churn_study/
+│   ├── data/  features/  models/  visualization/
+│   └── api/                 FastAPI service (--api)
+├── app/churn_study_app.py   Streamlit app
+├── notebooks/  scripts/  docs/  tests/
+├── data/                    raw, interim, processed, external (--data)
+├── pyproject.toml  Makefile  .env.example
+└── .pre-commit-config.yaml""",
+}
+for tab, (label, tree) in zip(st.tabs(list(trees)), trees.items()):
+    with tab:
+        st.code(tree, language="text")
 
-with arc_col2:
-    st.markdown("### 🧩 Key Components")
-    st.markdown("""
-| Component | File | Description |
-|-----------|------|-------------|
-| 🚀 **App Entry** | `app/main.py` | FastAPI app with lifecycle hooks, rate limiter, scheduler |
-| 🗄️ **Database** | `src/*/data/database.py` | Connection setup for your chosen DB engine |
-| 🔐 **Auth** | `src/*/middleware/middleware.py` | Pre-configured `JWTBearer` for route protection |
-| ⚡ **Rate Limiter** | `src/*/utils/limiter.py` | `slowapi` integration, ready to use |
-| 📆 **Scheduler** | `src/*/utils/scheduling.py` | `apscheduler` background jobs |
-| 🔌 **WebSocket** | `src/*/utils/connection_manager.py` | Generic WS manager |
-| 🛣️ **CRUD Router** | `src/*/utils/crud_router.py` | Generic factory for standard CRUD routes |
-| 🤖 **AI Service** | `src/*/service/*.py` | Generated by `make:service` |
-""")
 
-st.markdown('<div class="fancy-divider"></div>', unsafe_allow_html=True)
-st.markdown("""
-<div style='text-align:center;color:#4a5568;font-size:0.85rem;padding:16px 0'>
-    ⚡ Fast-Stack-Forge · by <a href="https://savantech.org" class="ext-link">SavanTech</a> ·
-    <a href="https://github.com/SavanTech25/fast-stack-forge" class="ext-link">GitHub</a> ·
-    <a href="mailto:savantech25@gmail.com" class="ext-link">savantech25@gmail.com</a>
-</div>
-""", unsafe_allow_html=True)
+# ── Requirements ──────────────────────────────────────────────────────────────
+section("What you need")
+
+reqs = [
+    ("Python 3.11 or newer", "The CLI and the generated projects use modern typing."),
+    ("uv", "Creates the virtual environments and installs dependencies. <code>curl -LsSf https://astral.sh/uv/install.sh | sh</code>"),
+    ("A database, sometimes", "SQLite and DuckDB need nothing. PostgreSQL, MySQL and MongoDB need a running server or a cloud URI."),
+    ("Databricks CLI, for bundles", "<code>make login</code> runs <code>databricks auth login</code> before you deploy."),
+]
+for col, (title, desc) in zip(st.columns(4, gap="medium"), reqs):
+    with col:
+        st.markdown(f'<div class="req"><strong>{title}</strong><span>{desc}</span></div>', unsafe_allow_html=True)
+
+forge.footer()

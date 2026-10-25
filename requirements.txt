@@ -1,6 +1,6 @@
 # App UI
-streamlit>=1.35.0
+streamlit>=1.41.0
 
-# Fast-Stack-Forge CLI — appelé en subprocess depuis la page Generate
-# Syntaxe pip/uv pour installer depuis GitHub directement
-fast-stack-forge
+# fast-stack-forge CLI: the Generate page runs it to build projects, and the
+# forms read their option lists (adapters, runtimes, providers...) from it
+fast-stack-forge>=1.1.0

@@ -1,502 +1,399 @@
 import streamlit as st
-import subprocess, shutil, zipfile, tempfile, os, sys
+import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from controller.sidebar import load_css, render_sidebar
+from controller import forge
 
-ASSETS = Path(__file__).parent.parent / "assets"
-
-def run_fastforge_cli(args, stdin_input=None, cwd=None):
-    """
-    Executes a fast-stack-forge command by running the Python package module
-    directly via `sys.executable -m fast_stack_forge.cli`.
-    This guarantees it uses the active virtual environment package containing the latest code,
-    bypassing the global system command completely to prevent PATH version conflicts.
-    
-    If fast_stack_forge is not installed or importable, it automatically runs
-    `pip install -e` on the local package directory to register it first.
-    """
-    # 1. Ensure the package is installed in editable mode in this python environment
-    try:
-        # pyrefly: ignore [missing-import]
-        import fast_stack_forge
-    except ImportError:
-        pkg_dir = Path(__file__).parent.parent.parent / "fastforge"
-        if pkg_dir.exists():
-            subprocess.run([sys.executable, "-m", "pip", "install", "-e", str(pkg_dir)], capture_output=True)
-            
-    # 2. Run the command using python -m
-    cmd = [sys.executable, "-m", "fast_stack_forge.cli"] + args
-    
-    result = subprocess.run(
-        cmd,
-        cwd=cwd,
-        input=stdin_input,
-        capture_output=True,
-        text=True
-    )
-    
-    # 3. If there is a click "No such command" or import error, try updating the package and re-run
-    if result.returncode != 0 and ("No such command" in result.stderr or "ModuleNotFoundError" in result.stderr):
-        pkg_dir = Path(__file__).parent.parent.parent / "fastforge"
-        if pkg_dir.exists():
-            # Force update/re-install
-            subprocess.run([sys.executable, "-m", "pip", "install", "-U", "-e", str(pkg_dir)], capture_output=True)
-            # Re-run
-            result = subprocess.run(
-                cmd,
-                cwd=cwd,
-                input=stdin_input,
-                capture_output=True,
-                text=True
-            )
-            
-    return result
-
-
-st.set_page_config(page_title="Generate — Fast-Stack-Forge ⚡", page_icon="⚡", layout="wide")
+st.set_page_config(page_title="Generate · fast-stack-forge", page_icon="⚡", layout="wide")
 load_css()
-
-# ── Sidebar ──────────────────────────────────────────
 render_sidebar()
+forge.require_package()
 
-st.markdown('<div class="page-title">⚡ Project Generator</div>', unsafe_allow_html=True)
-st.markdown('<div class="page-sub">Fill in the form, preview the commands, then download your generated project.</div>', unsafe_allow_html=True)
-
-# ── Tabs ──────────────────────────────────────────────────────────────────────
-tab1, tab_ds_data, tab_ds_make, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
-    "🚀 Init Project",
-    "🔬 Init DS Project",
-    "🧬 Add DS Backend",
-    "🧩 Entity",
-    "🌿 Init ETL",
-    "📐 dbt Model",
-    "🤖 AI Service",
-    "🔄 Sync Script",
-    "📊 Dashboard",
-])
-
-# ─────────────────────────────────────────────────────────────────────────────
-# TAB 1 — fast-stack-forge init
-# ─────────────────────────────────────────────────────────────────────────────
-with tab1:
-    st.markdown('<div class="info-box">🚀 <b>fast-stack-forge init</b> bootstraps a full FastAPI project with JWT auth, rate limiting, background scheduler, WebSocket manager, and a production-ready Makefile. Choose your database engine below.</div>', unsafe_allow_html=True)
-    c1, c2 = st.columns(2, gap="large")
-    with c1:
-        proj_name = st.text_input("Project name", value="my_project", key="init_name", help="Snake_case name for your project folder")
-        db_engine = st.selectbox("Database engine", ["sqlite", "postgresql", "mysql", "mongodb"], key="init_db",
-            help="sqlite → no server needed | postgresql/mysql → SQL | mongodb → NoSQL/Motor")
-    with c2:
-        st.markdown("### What gets generated")
-        st.markdown("""
-            - `app/main.py` — FastAPI entry point with lifecycle hooks
-            - `src/<name>/entity/` — DB models
-            - `src/<name>/schema/` — Pydantic models
-            - `src/<name>/controller/` — Business logic
-            - `src/<name>/router/` — API routes
-            - `src/<name>/middleware/` — JWTBearer
-            - `src/<name>/utils/` — limiter, scheduler, CRUD factory, WS manager
-            - `pyproject.toml`, `Makefile`, `.env`
-        """)
-
-    cmd_init = f"fast-stack-forge init {proj_name} --db {db_engine}"
-    st.markdown("**Generated command:**")
-    st.markdown(f'<div class="cmd-box">{cmd_init}</div>', unsafe_allow_html=True)
-    st.markdown("**After running:**")
-    st.code(f"cd {proj_name}\nmake install\nsource .venv/bin/activate\nmake run", language="bash")
-
-    if st.button("🚀 Generate & Download Project", key="btn_init", type="primary"):
-        with st.spinner("Generating project..."):
-            with tempfile.TemporaryDirectory() as tmpdir:
-                result = run_fastforge_cli(["init", proj_name, "--db", db_engine], cwd=tmpdir)
-                proj_path = Path(tmpdir) / proj_name
-                if result.returncode == 0 and proj_path.exists():
-                    zip_path = Path(tmpdir) / f"{proj_name}.zip"
-                    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
-                        for fp in proj_path.rglob("*"):
-                            if fp.is_file():
-                                zf.write(fp, fp.relative_to(tmpdir))
-                    st.success(f"✅ Project `{proj_name}` generated!")
-                    st.download_button("⬇️ Download ZIP", zip_path.read_bytes(),
-                                       file_name=f"{proj_name}.zip", mime="application/zip")
-                    with st.expander("📋 CLI output"):
-                        st.code(result.stdout)
-                else:
-                    st.error("❌ Generation failed. Make sure Fast-Stack-Forge is installed globally via `uv tool install fast-stack-forge`")
-                    st.code(result.stderr)
+forge.page_header(
+    "Generate a project",
+    "Fill in the options and download the project the CLI builds, or copy the command and run it yourself.",
+)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# TAB DS DATA — fast-stack-forge init:ds-data
-# ─────────────────────────────────────────────────────────────────────────────
-with tab_ds_data:
-    st.markdown('<div class="info-box">🔬 <b>fast-stack-forge init:ds-data</b> scaffolds a structured AstroData data science repository. Includes environment config via python-decouple and logging via loguru.</div>', unsafe_allow_html=True)
-    dsc1, dsc2 = st.columns(2, gap="large")
-    with dsc1:
-        ds_name = st.text_input("Project name", value="my_ds_project", key="ds_name", help="Data science repository name (will be auto-sanitized)")
-        
-        # Flags
-        ds_api = st.checkbox("Include FastAPI skeleton inside package (--api)", value=True, key="ds_api",
-            help="Creates a FastAPI app inside src/<package>/api/")
-        ds_data = st.checkbox("Include ETL raw/processed data folders (--data)", value=True, key="ds_data",
-            help="Creates data/raw, data/interim, data/processed, and data/external folders")
-        
-        # Companion project
-        ds_companion = st.checkbox("Create separate companion FastAPI project", value=False, key="ds_companion",
-            help="Asks you to bootstrap a separate backend project alongside (named <name>_api)")
-        ds_companion_db = st.selectbox("Companion DB", ["sqlite", "postgresql", "mysql", "mongodb"], key="ds_companion_db", disabled=not ds_companion)
-        
-        # Stdin interactive selections
-        c_pymajor = sys.version_info
-        py_versions = [f"{c_pymajor.major}.{c_pymajor.minor}", f"{c_pymajor.major}.{c_pymajor.minor - 1}", f"{c_pymajor.major}.{c_pymajor.minor - 2}"]
-        ds_pyver = st.selectbox("Python version", py_versions, index=0, key="ds_pyver")
-        
-        ds_os = st.checkbox("Is this project open source?", value=True, key="ds_os")
-        ds_license = st.selectbox("License", ["MIT", "BSD-3-Clause", "Apache-2.0", "GPL-3.0"], key="ds_license", disabled=not ds_os)
-        
-        ds_desc = st.text_input("Project description", value="", placeholder="A data science project...", key="ds_desc")
-        ds_author = st.text_input("Author name", value="", key="ds_author")
-        ds_email = st.text_input("Author email", value="", key="ds_email", disabled=not ds_author.strip())
-        
-    with dsc2:
-        st.markdown("### What gets generated")
-        st.markdown("""
-            - `src/<package_name>/` — Package root
-                - `data/`, `features/`, `models/`, `visualization/`, `front/`
-                - `api/` — FastAPI skeleton (if enabled)
-            - `notebooks/`, `scripts/`, `docs/`
-            - `tests/` — Pytest suite
-            - `app/<package_name>_app.py` — Streamlit app
-            - `pyproject.toml`, `Makefile`, `.env.example`, `.pre-commit-config.yaml`
-            - `docker-compose.yml`, `dockerfiles/` (if API enabled)
-        """)
-        
-    # Build generated command representation
-    api_flag = " --api" if ds_api else ""
-    data_flag = " --data" if ds_data else ""
-    cmd_ds_data = f"fast-stack-forge init:ds-data {ds_name}{api_flag}{data_flag}"
-    
-    st.markdown("**Generated CLI command (will trigger interactive prompts):**")
-    st.markdown(f'<div class="cmd-box">{cmd_ds_data}</div>', unsafe_allow_html=True)
-    st.markdown("**Interactive Prompts Configured:**")
-    st.code(f"""Companion FastAPI project? {'Yes' if ds_companion else 'No'}
-Selected DB (if companion): {ds_companion_db}
-Python version: {ds_pyver}
-Open Source: {'Yes' if ds_os else 'No'} (License: {ds_license if ds_os else 'Proprietary'})
-Description: {ds_desc or 'A data science project: ' + ds_name}
-Author: {ds_author or 'None'} (Email: {ds_email or 'None'})""", language="text")
-
-    if st.button("🚀 Generate & Download DS Project", key="btn_ds_data", type="primary"):
-        with st.spinner("Generating AstroData project..."):
-            with tempfile.TemporaryDirectory() as tmpdir:
-                # Build the interactive input sequence
-                stdin_lines = []
-                
-                # 1. Companion API
-                if ds_companion:
-                    stdin_lines.append("y")
-                    db_idx = ["sqlite", "postgresql", "mysql", "mongodb"].index(ds_companion_db) + 1
-                    stdin_lines.append(str(db_idx))
-                else:
-                    stdin_lines.append("n")
-                
-                # 2. Python version choice
-                py_idx = py_versions.index(ds_pyver) + 1
-                stdin_lines.append(str(py_idx))
-                
-                # 3. Open source
-                if ds_os:
-                    stdin_lines.append("y")
-                    stdin_lines.append(ds_license)
-                else:
-                    stdin_lines.append("n")
-                
-                # 4. Description
-                stdin_lines.append(ds_desc.strip())
-                
-                # 5. Author name
-                stdin_lines.append(ds_author.strip())
-                
-                # 6. Author email
-                if ds_author.strip():
-                    stdin_lines.append(ds_email.strip())
-                
-                stdin_input_str = "\n".join(stdin_lines) + "\n"
-                
-                # Let's run
-                args = ["init:ds-data", ds_name]
-                if ds_api:
-                    args.append("--api")
-                if ds_data:
-                    args.append("--data")
-                    
-                result = run_fastforge_cli(args, stdin_input=stdin_input_str, cwd=tmpdir)
-                
-                # Check for output folders (sanitized name)
-                san_name = ds_name.strip().lower().replace(" ", "_").replace("-", "_")
-                zip_path = Path(tmpdir) / f"{san_name}_ds.zip"
-                
-                if result.returncode == 0:
-                    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
-                        for fp in Path(tmpdir).rglob("*"):
-                            if fp.is_file() and fp != zip_path:
-                                zf.write(fp, fp.relative_to(tmpdir))
-                                
-                    if zip_path.exists() and zip_path.stat().st_size > 100:
-                        st.success(f"✅ AstroData project `{ds_name}` successfully generated!")
-                        st.download_button("⬇️ Download ZIP", zip_path.read_bytes(),
-                                           file_name=f"{san_name}_ds.zip", mime="application/zip")
-                        with st.expander("📋 CLI output"):
-                            st.code(result.stdout)
-                    else:
-                        st.error("❌ Generation succeeded but no files were written.")
-                else:
-                    st.error("❌ Generation failed. Make sure Fast-Stack-Forge is installed globally.")
-                    st.code(result.stderr)
+def lead(text: str) -> None:
+    st.markdown(f'<p class="lead">{text}</p>', unsafe_allow_html=True)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# TAB DS MAKE — fast-stack-forge init:ds-make
-# ─────────────────────────────────────────────────────────────────────────────
-with tab_ds_make:
-    st.markdown('<div class="info-box">🧬 <b>fast-stack-forge init:ds-make</b> upgrades an existing AstroData data science project by automatically injecting a FastAPI and a Streamlit dashboard skeleton, plus Docker files.</div>', unsafe_allow_html=True)
-    dmc1, dmc2 = st.columns(2, gap="large")
-    with dmc1:
-        ds_make_dir = st.text_input("Project directory path", value=".", key="ds_make_dir",
-            help="Path to the existing AstroData project root (containing src/)")
-    with dmc2:
-        st.markdown("### What gets added/updated")
-        st.markdown("""
-            - `src/<package_name>/api/` — FastAPI REST API (main, upload middleware, routes: base, system, greetings)
-            - `app/<package_name>_app.py` — Pre-wired Streamlit dashboard
-            - `.streamlit/config.toml` — Theme & port configuration
-            - `docker-compose.yml` — Container architecture
-            - `dockerfiles/Dockerfile.api` & `Dockerfile.app`
-            - `tests/test_api.py` — Endpoint test suite
-            - `pyproject.toml` — Appends `fastapi`, `uvicorn`, `pydantic` etc. and adds entrypoints
-            - `Makefile` — Injects running targets (`run_api` and `run`)
-        """)
-        
-    cmd_ds_make = f"fast-stack-forge init:ds-make {ds_make_dir}".strip()
-    st.markdown("**Generated command:**")
-    st.markdown(f'<div class="cmd-box">{cmd_ds_make}</div>', unsafe_allow_html=True)
-    st.info("⚠️ Run this command inside your existing AstroData project folder where `src/` lives.")
+def label(text: str) -> None:
+    st.markdown(f'<div class="panel-label">{text}</div>', unsafe_allow_html=True)
 
 
+def note(text: str) -> None:
+    st.markdown(f'<div class="note">{text}</div>', unsafe_allow_html=True)
 
-# ─────────────────────────────────────────────────────────────────────────────
-# TAB 2 — fast-stack-forge make:entity
-# ─────────────────────────────────────────────────────────────────────────────
-with tab2:
-    st.markdown('<div class="info-box">🧩 <b>fast-stack-forge make:entity</b> generates the Model, Pydantic Schema, Controller, and Router for a given entity. Run this from inside a Fast-Stack-Forge project.</div>', unsafe_allow_html=True)
-    c1, c2 = st.columns(2, gap="large")
-    with c1:
-        ent_name = st.text_input("Entity name (PascalCase)", value="User", key="ent_name")
-        no_router = st.checkbox("Skip router generation (--no-router)", key="ent_no_router")
-        no_ctrl   = st.checkbox("Skip controller generation (--no-controller)", key="ent_no_ctrl")
-    with c2:
-        st.markdown("**Field syntax:** `name:type[:modifier]`")
-        st.markdown("""
-| Type | Description |
-|------|-------------|
-| `string` | VARCHAR / str |
-| `int` | Integer |
-| `float` | Float |
-| `bool` | Boolean |
-| `text` | Long text |
-| `date` | Date only |
-| `datetime` | Full timestamp |
 
-**Modifiers:** `hash` · `encrypt` · `nullable` · `fk=ModelName`
-""")
+# How the answers (keyed by a fragment of the CLI question) are shown in the terminal
+QUESTION_NAMES = {
+    "companion FastAPI backend": "Separate FastAPI project",
+    "Database for the FastAPI project": "Its database",
+    "open source": "Open source",
+    "License": "Licence",
+    "Short description": "Description",
+    "Project description": "Description",
+    "Author name": "Author",
+    "SQL warehouse name": "SQL warehouse",
+    "dbt model architecture": "dbt model layout",
+}
 
-    st.markdown("**Add fields:**")
-    if "ent_fields" not in st.session_state:
-        st.session_state.ent_fields = [{"name": "email", "type": "string", "modifier": "hash"},
-                                        {"name": "is_active", "type": "bool", "modifier": ""}]
-    
-    field_types = ["string","int","float","bool","text","date","datetime"]
-    field_mods  = ["","hash","encrypt","nullable"]
 
-    for i, f in enumerate(st.session_state.ent_fields):
-        fc1, fc2, fc3, fc4 = st.columns([3,2,2,1])
-        with fc1:
-            st.session_state.ent_fields[i]["name"] = st.text_input("Name", value=f["name"], key=f"fn_{i}", label_visibility="collapsed")
-        with fc2:
-            idx = field_types.index(f["type"]) if f["type"] in field_types else 0
-            st.session_state.ent_fields[i]["type"] = st.selectbox("Type", field_types, index=idx, key=f"ft_{i}", label_visibility="collapsed")
-        with fc3:
-            mod_idx = field_mods.index(f["modifier"]) if f["modifier"] in field_mods else 0
-            st.session_state.ent_fields[i]["modifier"] = st.selectbox("Modifier", field_mods, index=mod_idx, key=f"fm_{i}", label_visibility="collapsed")
-        with fc4:
-            if st.button("🗑️", key=f"fdel_{i}") and len(st.session_state.ent_fields) > 1:
-                st.session_state.ent_fields.pop(i); st.rerun()
+def command_panel(args: list, answers: dict = None, then: list = None) -> None:
+    """Terminal with the command, the answers to the questions it asks, and what to run next."""
+    lines = [f"$ {forge.command_line(args)}"]
+    for question, reply in (answers or {}).items():
+        if isinstance(reply, bool):
+            reply = "yes" if reply else "no"
+        lines.append((f"? {QUESTION_NAMES.get(question, question)}: ", str(reply) or "(blank)"))
+    lines += [f"$ {cmd}" for cmd in then or []]
+    forge.show_terminal(lines)
 
-    if st.button("➕ Add field", key="add_field"):
-        st.session_state.ent_fields.append({"name": "field", "type": "string", "modifier": ""}); st.rerun()
 
-    fields_str = " ".join(
-        f"{f['name']}:{f['type']}" + (f":{f['modifier']}" if f['modifier'] else "")
-        for f in st.session_state.ent_fields if f["name"]
+mode = st.segmented_control(
+    "What are you doing?", ["Start a new project", "Add to an existing project"],
+    default="Start a new project", key="mode", label_visibility="collapsed",
+) or "Start a new project"
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# New projects: generated here and downloaded as a ZIP
+# ═════════════════════════════════════════════════════════════════════════════
+if mode == "Start a new project":
+    t_api, t_dbt, t_dbx, t_ds = st.tabs(["FastAPI backend", "dbt project", "Databricks bundle", "Data science repo"])
+
+    # ── fast-stack-forge init ────────────────────────────────────────────────
+    with t_api:
+        lead("<b>init</b> creates a FastAPI backend with JWT middleware, rate limiting, a background scheduler, "
+             "a WebSocket manager and a generic CRUD router.")
+        form, out = st.columns([5, 6], gap="large")
+        with form:
+            api_name = st.text_input("Project name", "my_api", key="api_name", help="Turned into a valid Python package name")
+            api_db = st.radio("Database", list(forge.DB_HELP), key="api_db", horizontal=True)
+            st.caption(forge.DB_HELP[api_db])
+        with out:
+            name = forge.sanitize_name(api_name) or "my_api"
+            args = ["init", name, "--db", api_db]
+            label("Command")
+            command_panel(args, then=[f"cd {name} && make install && make run"])
+            forge.generate_section("api", args, {}, name, "Generate FastAPI project")
+
+    # ── fast-stack-forge init:dbt ────────────────────────────────────────────
+    with t_dbt:
+        lead("<b>init:dbt</b> creates a standalone dbt project with a <code>profiles.yml</code> that reads its secrets "
+             "from environment variables. With the examples, <code>make build</code> passes on the first run.")
+        form, out = st.columns([5, 6], gap="large")
+        with form:
+            dbt_name = st.text_input("Project name", "analytics", key="dbt_name")
+            c1, c2 = st.columns(2)
+            with c1:
+                dbt_archi = st.selectbox("Model layout", list(forge.ARCHITECTURES), key="dbt_archi",
+                                         format_func=lambda k: f"{k} · {' → '.join(forge.ARCHITECTURES[k]['layers'])}")
+            with c2:
+                dbt_adapter = st.selectbox("Warehouse adapter", list(forge.ADAPTERS), key="dbt_adapter",
+                                           format_func=lambda k: f"{k} · {forge.ADAPTERS[k]['help']}")
+            dbt_examples = st.checkbox("Example seeds, models, tests and snapshot", True, key="dbt_examples")
+            py_ok = forge.ADAPTERS[dbt_adapter]["python_models"] and dbt_examples
+            dbt_python = st.checkbox(
+                "Example dbt Python model", dbt_adapter == "duckdb", key="dbt_python", disabled=not py_ok,
+                help="Available with the examples on DuckDB, Snowflake and Databricks",
+            )
+            c1, c2 = st.columns([1, 2])
+            with c1:
+                dbt_py = st.selectbox("Python version", forge.DBT_PYTHON_VERSIONS, key="dbt_py")
+            with c2:
+                dbt_desc = st.text_input("Description", "", key="dbt_desc", placeholder="Optional")
+        with out:
+            name = forge.sanitize_name(dbt_name) or "my_dbt_project"
+            args = ["init:dbt", name, "--archi", dbt_archi, "--adapter", dbt_adapter,
+                    "--examples" if dbt_examples else "--no-examples",
+                    "--python-model" if dbt_python and py_ok else "--no-python-model"]
+            answers = {"Python version": dbt_py, "Short description": dbt_desc}
+            label("Command")
+            command_panel(args, answers, then=[f"cd {name} && make install && make build"])
+            layers = forge.ARCHITECTURES[dbt_archi]["layers"]
+            st.caption(f"Models go in {', '.join(f'models/{l}/' for l in layers)}. "
+                       f"Installs dbt-core and {forge.ADAPTERS[dbt_adapter]['package']}.")
+            forge.generate_section("dbt", args, answers, name, "Generate dbt project")
+
+    # ── fast-stack-forge init:databricks ─────────────────────────────────────
+    with t_dbx:
+        lead("<b>init:databricks</b> creates a Databricks Asset Bundle: dev and prod targets, a Unity Catalog schema "
+             "and a daily job made of the tasks you pick. Tests run locally through Databricks Connect.")
+        form, out = st.columns([5, 6], gap="large")
+        with form:
+            dbx_name = st.text_input("Project name", "lakehouse", key="dbx_name")
+            dbx_host = st.text_input("Workspace URL", "https://<your-workspace>.cloud.databricks.com", key="dbx_host")
+            c1, c2 = st.columns(2)
+            with c1:
+                dbx_catalog = st.text_input("Unity Catalog catalog", "main", key="dbx_catalog")
+            with c2:
+                dbx_runtime = st.selectbox(
+                    "Runtime", list(forge.RUNTIMES), key="dbx_runtime",
+                    format_func=lambda k: f"{forge.RUNTIMES[k]['label']} · Python {forge.RUNTIMES[k]['python']}",
+                )
+            c1, c2 = st.columns(2)
+            with c1:
+                dbx_compute = st.radio("Compute", ["serverless", "classic"], key="dbx_compute", horizontal=True,
+                                       help="Serverless needs no cluster. Classic uses a job cluster.")
+            with c2:
+                dbx_cloud = st.selectbox("Cloud", list(forge.NODE_TYPES), key="dbx_cloud",
+                                         disabled=dbx_compute != "classic",
+                                         format_func=lambda k: f"{k} · {forge.NODE_TYPES[k]}")
+            dbx_with = st.multiselect(
+                "Job tasks", list(forge.COMPONENTS), default=["wheel", "notebook"], key="dbx_with",
+                format_func=lambda k: f"{k}: {forge.COMPONENTS[k]}",
+            )
+            if not dbx_with:
+                st.caption("Nothing picked: the CLI adds the Python wheel task.")
+            if "dbt" in dbx_with:
+                c1, c2 = st.columns(2)
+                with c1:
+                    dbx_wh = st.text_input("SQL warehouse for dbt", "Serverless Starter Warehouse", key="dbx_wh")
+                with c2:
+                    dbx_archi = st.selectbox("dbt model layout", list(forge.ARCHITECTURES), index=1, key="dbx_archi")
+            dbx_desc = st.text_input("Description", "", key="dbx_desc", placeholder="Optional")
+        with out:
+            name = forge.sanitize_name(dbx_name) or "my_databricks_project"
+            args = ["init:databricks", name, "--host", dbx_host.strip(), "--catalog", dbx_catalog.strip() or "main",
+                    "--compute", dbx_compute, "--runtime", dbx_runtime]
+            if dbx_compute == "classic":
+                args += ["--cloud", dbx_cloud]
+            for component in dbx_with or ["wheel"]:
+                args += ["--with", component]
+            answers = {"Short description": dbx_desc}
+            if "dbt" in dbx_with:
+                answers = {"SQL warehouse name": dbx_wh, "dbt model architecture": dbx_archi, **answers}
+            label("Command")
+            command_panel(args, answers, then=[f"cd {name}", "make login && make install", "make deploy && make run"])
+            forge.generate_section("dbx", args, answers, name, "Generate Databricks bundle")
+
+    # ── fast-stack-forge init:ds-data ────────────────────────────────────────
+    with t_ds:
+        lead("<b>init:ds-data</b> creates an AstroData data science repo: notebooks, a Streamlit app, "
+             "config with python-decouple and logging with loguru.")
+        form, out = st.columns([5, 6], gap="large")
+        with form:
+            ds_name = st.text_input("Project name", "churn_study", key="ds_name")
+            ds_api = st.checkbox("FastAPI service inside the package (src/<name>/api)", True, key="ds_api")
+            ds_data = st.checkbox("Data folders: raw, interim, processed, external", True, key="ds_data")
+            c1, c2 = st.columns(2)
+            with c1:
+                ds_companion = st.checkbox("Separate API project", False, key="ds_companion",
+                                           help="Creates <name>_api next to the repo, with its own database")
+            with c2:
+                ds_companion_db = st.selectbox("Its database", forge.DB_CHOICES, key="ds_companion_db",
+                                               disabled=not ds_companion)
+            py_versions = forge.get_python_versions()
+            c1, c2 = st.columns(2)
+            with c1:
+                ds_pyver = st.selectbox("Python version", py_versions, key="ds_pyver")
+            with c2:
+                ds_license = st.selectbox("Licence", [*forge.LICENSES, "Proprietary"], key="ds_license")
+            ds_desc = st.text_input("Description", "", key="ds_desc", placeholder="Optional")
+            c1, c2 = st.columns(2)
+            with c1:
+                ds_author = st.text_input("Author", "", key="ds_author", placeholder="Optional")
+            with c2:
+                ds_email = st.text_input("Author email", "", key="ds_email", disabled=not ds_author.strip())
+        with out:
+            name = forge.sanitize_name(ds_name) or "my_ds_project"
+            args = ["init:ds-data", name, "--api" if ds_api else "--no-api", "--data" if ds_data else "--no-data"]
+            open_source = ds_license != "Proprietary"
+            answers = {"companion FastAPI backend": ds_companion}
+            if ds_companion:
+                answers["Database for the FastAPI project"] = ds_companion_db
+            answers |= {"Python version": ds_pyver, "open source": open_source}
+            if open_source:
+                answers["License"] = ds_license
+            answers |= {"Project description": ds_desc.strip(), "Author name": ds_author.strip()}
+            if ds_author.strip():
+                answers["Author email"] = ds_email.strip()
+            label("Command")
+            command_panel(args, answers, then=[f"cd {name} && make install"])
+            forge.generate_section("ds", args, answers, name, "Generate data science repo")
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# Existing projects: the command to run from the project root
+# ═════════════════════════════════════════════════════════════════════════════
+else:
+    note("These commands change files in a project you already have, so copy them and run them "
+         "from anywhere inside that project.")
+    t_ent, t_svc, t_mdl, t_dash, t_sync, t_dsm, t_rm = st.tabs(
+        ["Entity", "AI service", "dbt model", "Dashboard", "Sync script", "DS backend", "Remove an entity"]
     )
-    flags = ("--no-router " if no_router else "") + ("--no-controller" if no_ctrl else "")
-    cmd_ent = f"fast-stack-forge make:entity {ent_name} {fields_str} {flags}".strip()
-    st.markdown("**Generated command:**")
-    st.markdown(f'<div class="cmd-box">{cmd_ent}</div>', unsafe_allow_html=True)
-    st.info("⚠️ Run this command from the **root of your Fast-Stack-Forge project** (where `src/` lives).")
 
+    # ── make:entity ──────────────────────────────────────────────────────────
+    with t_ent:
+        lead("<b>make:entity</b> writes the model, the Pydantic schema, the controller and the router for an entity, "
+             "and registers the router in <code>app/main.py</code>.")
+        form, out = st.columns([6, 5], gap="large")
+        with form:
+            ent_name = st.text_input("Entity name", "User", key="ent_name", help="PascalCase, e.g. Invoice")
+            fields = st.data_editor(
+                [
+                    {"name": "name", "type": "string", "modifier": None, "fk": None},
+                    {"name": "email", "type": "string", "modifier": "hash", "fk": None},
+                    {"name": "is_active", "type": "bool", "modifier": None, "fk": None},
+                ],
+                key="ent_fields", num_rows="dynamic",
+                column_config={
+                    "name": st.column_config.TextColumn("Field", required=True),
+                    "type": st.column_config.SelectboxColumn(
+                        "Type", options=["string", "int", "float", "bool", "text", "date", "datetime"],
+                        default="string", required=True),
+                    "modifier": st.column_config.SelectboxColumn(
+                        "Modifier", options=["hash", "encrypt", "nullable"]),
+                    "fk": st.column_config.TextColumn("Foreign key to", help="Model name, e.g. Role"),
+                },
+            )
+            c1, c2 = st.columns(2)
+            with c1:
+                no_router = st.checkbox("Skip the router", key="ent_no_router")
+            with c2:
+                no_ctrl = st.checkbox("Skip the controller", key="ent_no_ctrl")
+        with out:
+            tokens = []
+            for f in fields:
+                if not (f.get("name") or "").strip():
+                    continue
+                parts = [f["name"].strip(), f.get("type") or "string"]
+                if f.get("modifier"):
+                    parts.append(f["modifier"])
+                if (f.get("fk") or "").strip():
+                    parts.append(f"fk={f['fk'].strip()}")
+                tokens.append(":".join(parts))
+            args = ["make:entity", ent_name.strip() or "Entity", *tokens]
+            args += ["--no-router"] if no_router else []
+            args += ["--no-controller"] if no_ctrl else []
+            label("Command")
+            command_panel(args)
+            st.caption("Hashed fields are stored with bcrypt; encrypted fields with Fernet, using FERNET_KEY from .env.")
 
-# ─────────────────────────────────────────────────────────────────────────────
-# TAB 3 — fast-stack-forge init:etl
-# ─────────────────────────────────────────────────────────────────────────────
-with tab3:
-    st.markdown('<div class="info-box">🌿 <b>fast-stack-forge init:etl</b> scaffolds a complete dbt project inside your Fast-Stack-Forge project, with your chosen architecture and data warehouse connector.</div>', unsafe_allow_html=True)
-    c1, c2 = st.columns(2, gap="large")
-    with c1:
-        etl_name = st.text_input("dbt project name", value="my_project_etl", key="etl_name")
-        etl_archi = st.selectbox("Architecture style", ["medallion","default","star"], key="etl_archi",
-            help="medallion → bronze/silver/gold | default → stg/int/mart | star → raw/dim/fact")
-        etl_conn  = st.selectbox("Warehouse connector", ["postgres","local","snowflake","bigquery"], key="etl_conn",
-            help="local → DuckDB (no server) | postgres → Supabase/RDS | snowflake/bigquery → cloud DWH")
-    with c2:
-        layers = {"medallion": ["bronze","silver","gold"], "default": ["stg","int","mart"], "star": ["raw","dim","fact"]}
-        lyr = layers[etl_archi]
-        st.markdown(f"**Layers generated for `{etl_archi}`:**")
-        for l in lyr:
-            st.markdown(f"- `models/{l}/`")
-        st.markdown("**Also includes:** `dbt_project.yml`, `profiles.yml`, `packages.yml`, `schema.yml`, `exposures.yml`, snapshots, seeds, macros")
-        if etl_conn == "local":
-            st.markdown("📦 **Install:** `uv pip install dbt-duckdb`")
-        elif etl_conn == "postgres":
-            st.markdown("📦 **Install:** `uv pip install dbt-postgres`")
-        elif etl_conn == "snowflake":
-            st.markdown("📦 **Install:** `uv pip install dbt-snowflake`")
-        elif etl_conn == "bigquery":
-            st.markdown("📦 **Install:** `uv pip install dbt-bigquery`")
-
-    cmd_etl = f"fast-stack-forge init:etl {etl_name} --archi {etl_archi} --connector {etl_conn}"
-    st.markdown("**Generated command:**")
-    st.markdown(f'<div class="cmd-box">{cmd_etl}</div>', unsafe_allow_html=True)
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# TAB 4 — fast-stack-forge make:dbt
-# ─────────────────────────────────────────────────────────────────────────────
-with tab4:
-    st.markdown('<div class="info-box">📐 <b>fast-stack-forge make:dbt</b> quickly scaffolds a single dbt model (SQL or Python) inside an existing ETL project.</div>', unsafe_allow_html=True)
-    c1, c2 = st.columns(2, gap="large")
-    with c1:
-        dbt_model = st.text_input("Model name (snake_case)", value="fact_orders", key="dbt_model")
-        dbt_layer = st.text_input("Layer (e.g. bronze, silver, mart)", value="silver", key="dbt_layer")
-        dbt_view  = st.checkbox("Materialize as view (--view)", key="dbt_view")
-        dbt_incr  = st.checkbox("Incremental model (--incremental)", key="dbt_incr")
-        dbt_py    = st.checkbox("Python model (--python)", key="dbt_py")
-    with c2:
-        st.markdown("**Examples:**")
-        st.code("fast-stack-forge make:dbt stg_users --layer stg\nfast-stack-forge make:dbt fact_revenue --view --layer mart\nfast-stack-forge make:dbt ml_features --python --incremental --layer gold", language="bash")
-
-    flags_dbt = []
-    if dbt_view: flags_dbt.append("--view")
-    if dbt_incr: flags_dbt.append("--incremental")
-    if dbt_py:   flags_dbt.append("--python")
-    if dbt_layer: flags_dbt.append(f"--layer {dbt_layer}")
-    cmd_dbt = f"fast-stack-forge make:dbt {dbt_model} {' '.join(flags_dbt)}".strip()
-    st.markdown("**Generated command:**")
-    st.markdown(f'<div class="cmd-box">{cmd_dbt}</div>', unsafe_allow_html=True)
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# TAB 5 — fast-stack-forge make:service
-# ─────────────────────────────────────────────────────────────────────────────
-with tab5:
-    st.markdown('<div class="info-box">🤖 <b>fast-stack-forge make:service</b> generates a production-ready AI service and its FastAPI router. It auto-installs provider/vector-store hints.</div>', unsafe_allow_html=True)
-    c1, c2 = st.columns(2, gap="large")
-    with c1:
-        svc_name = st.text_input("Service name (PascalCase)", value="HelpdeskBot", key="svc_name")
-        svc_type = st.selectbox("Service type", ["rag","agent","agentic","ocr"], key="svc_type",
-            help="rag → RAG with vector store | agent → tool-calling | agentic → LangGraph | ocr → Vision/extraction")
-        svc_prov = st.selectbox("AI Provider", ["openai","anthropic","mistral","gemini","azure"], key="svc_prov")
-        svc_vec  = st.selectbox("Vector store (RAG only)", ["chroma","qdrant","supabase","upstash"], key="svc_vec",
-            disabled=(svc_type != "rag"))
-    with c2:
-        st.markdown("**What gets generated:**")
-        st.markdown(f"""
-- `src/<project>/service/{svc_name.lower()}.py` — AI service class
-- `src/<project>/router/r_{svc_name.lower()}.py` — FastAPI router with `POST /{svc_name.lower()}` endpoint (JWT protected)
-- `app/main.py` updated with the new router import
-
-**Required packages will be shown after generation.**
-""")
-        type_desc = {
-            "rag": "Retrieval-Augmented Generation — chunks documents, embeds them in a vector store, retrieves context for LLM answers.",
-            "agent": "Tool-calling agent — LLM with access to defined tools/functions.",
-            "agentic": "LangGraph workflow — stateful multi-step agent with a state graph.",
-            "ocr": "Vision/OCR extraction — send images or PDFs, extract structured data.",
+    # ── make:service ─────────────────────────────────────────────────────────
+    with t_svc:
+        lead("<b>make:service</b> adds an AI service and its JWT-protected router, puts the dependencies in "
+             "<code>pyproject.toml</code> and the settings in <code>.env</code>.")
+        svc_info = {
+            "rag": ("Answers from your documents: chunking, vector search, sources in the answer.",
+                    "POST /{n}  {query}   ·   POST /{n}/ingest   ·   POST /{n}/refresh"),
+            "agent": ("Tool-calling agent (LangChain create_agent) with memory per session.",
+                      "POST /{n}  {query, session_id}"),
+            "agentic": ("An explicit LangGraph workflow, an LLM ↔ tools loop you extend with your own nodes.",
+                        "POST /{n}  {query, session_id}"),
+            "ocr": ("Text extraction from an uploaded image or PDF, returned as Markdown.",
+                    "POST /{n}  multipart field 'file'"),
         }
-        st.info(type_desc.get(svc_type, ""))
+        form, out = st.columns([5, 6], gap="large")
+        with form:
+            svc_name = st.text_input("Service name", "HelpdeskBot", key="svc_name")
+            svc_type = st.radio("Type", forge.SERVICE_TYPES, key="svc_type", horizontal=True)
+            st.caption(svc_info[svc_type][0])
+            c1, c2 = st.columns(2)
+            with c1:
+                svc_prov = st.selectbox("Provider", forge.PROVIDERS, key="svc_prov")
+            with c2:
+                svc_vec = st.selectbox("Vector store", forge.VECTOR_STORES, key="svc_vec",
+                                       disabled=svc_type != "rag", help="RAG services only")
+            if svc_type == "rag" and svc_prov == "anthropic":
+                note("Anthropic has no embeddings API, so this RAG service embeds with Voyage AI (VOYAGE_API_KEY).")
+        with out:
+            args = ["make:service", svc_name.strip() or "Service", "--type", svc_type, "--provider", svc_prov]
+            if svc_type == "rag":
+                args += ["--vector-store", svc_vec]
+            label("Command")
+            command_panel(args, then=["uv sync"])
+            st.caption(f"Endpoint: {svc_info[svc_type][1].replace('{n}', (svc_name.strip() or 'service').lower())}. "
+                       "Fill in the API keys in .env; models are set there too.")
 
-    vs_part = f" --vector-store {svc_vec}" if svc_type == "rag" else ""
-    cmd_svc = f"fast-stack-forge make:service {svc_name} --type {svc_type} --provider {svc_prov}{vs_part}"
-    st.markdown("**Generated command:**")
-    st.markdown(f'<div class="cmd-box">{cmd_svc}</div>', unsafe_allow_html=True)
+    # ── make:dbt ─────────────────────────────────────────────────────────────
+    with t_mdl:
+        lead("<b>make:dbt</b> adds one model to a dbt project, in the layer folder you name.")
+        form, out = st.columns([5, 6], gap="large")
+        with form:
+            mdl_name = st.text_input("Model name", "fct_orders", key="mdl_name")
+            mdl_layer = st.text_input("Layer folder", "gold", key="mdl_layer", help="e.g. staging, silver, marts")
+            mdl_lang = st.radio("Language", ["SQL", "Python"], key="mdl_lang", horizontal=True)
+            mdl_mat = st.radio("Materialization", ["table", "view", "incremental"], key="mdl_mat", horizontal=True,
+                               help="Python models can't be views; the CLI uses a table instead")
+        with out:
+            args = ["make:dbt", mdl_name.strip() or "model"]
+            if mdl_mat == "view":
+                args.append("--view")
+            if mdl_mat == "incremental":
+                args.append("--incremental")
+            if mdl_lang == "Python":
+                args.append("--python")
+            if mdl_layer.strip():
+                args += ["--layer", mdl_layer.strip()]
+            label("Command")
+            command_panel(args, then=["uv run dbt build --select " + (mdl_name.strip() or "model")])
 
+    # ── make:dashboard ───────────────────────────────────────────────────────
+    with t_dash:
+        lead("<b>make:dashboard</b> writes a multi-page Streamlit dashboard in <code>app/dashboard/</code> "
+             "and adds a <code>dashboard</code> target to the Makefile.")
+        page_icons = {"Atelier": "🏗️", "Analytics": "📊", "Chatbot": "🤖"}
+        form, out = st.columns([5, 6], gap="large")
+        with form:
+            dash_presets = st.multiselect("Ready-made pages", list(page_icons), default=["Atelier", "Analytics"],
+                                          key="dash_pages", help="Atelier manages entities, services and dbt models")
+            dash_custom = st.text_input("More pages", "", key="dash_custom", placeholder="Reports, Settings")
+            pages = dash_presets + [p.strip() for p in dash_custom.split(",") if p.strip()]
+        with out:
+            args = ["make:dashboard", *pages]
+            label("Command")
+            command_panel(args, then=["make dashboard"])
+            files = [f"{i}_{page_icons.get(p, '📄')}_{p}.py" for i, p in enumerate(pages or ["Atelier"], 1)]
+            st.caption("Pages: " + ", ".join(files))
 
-# ─────────────────────────────────────────────────────────────────────────────
-# TAB 6 — fast-stack-forge make:sync
-# ─────────────────────────────────────────────────────────────────────────────
-with tab6:
-    st.markdown('<div class="info-box">🔄 <b>fast-stack-forge make:sync</b> scaffolds a Python ELT script that replicates data from a source DB to a destination. Includes APScheduler for continuous execution.</div>', unsafe_allow_html=True)
-    c1, c2 = st.columns(2, gap="large")
-    with c1:
-        sync_name = st.text_input("Sync script name (PascalCase)", value="MongoToPg", key="sync_name")
-        sync_src  = st.selectbox("Source database", ["mongodb","postgresql","mysql","sqlite"], key="sync_src")
-        sync_dst  = st.selectbox("Destination database", ["postgres","mysql","sqlite","bigquery"], key="sync_dst")
-    with c2:
-        st.markdown("**Generated files:**")
-        st.markdown(f"""
-- `src/<project>/sync/{sync_name.lower()}.py` — Sync script with APScheduler
-- `src/<project>/sync/requirements.txt` — pymongo, pandas, sqlalchemy, apscheduler…
-""")
-        st.markdown("**Install and run:**")
-        st.code(f"cd src/<project>/sync\nuv pip install -r requirements.txt\npython {sync_name.lower()}.py", language="bash")
+    # ── make:sync ────────────────────────────────────────────────────────────
+    with t_sync:
+        lead("<b>make:sync</b> writes an ELT script that copies data into your analytics store on a schedule "
+             "(APScheduler), flattening nested documents with pandas.")
+        form, out = st.columns([5, 6], gap="large")
+        with form:
+            sync_name = st.text_input("Script name", "MongoToPg", key="sync_name")
+            c1, c2 = st.columns(2)
+            with c1:
+                sync_src = st.selectbox("Source", ["mongodb", "api"], key="sync_src")
+            with c2:
+                sync_dst = st.selectbox("Destination", ["postgres", "upstash"], key="sync_dst")
+        with out:
+            name = sync_name.strip() or "Sync"
+            args = ["make:sync", name, "--source", sync_src, "--dest", sync_dst]
+            label("Command")
+            command_panel(args, then=[f"cd src/<package>/sync && uv pip install -r requirements.txt",
+                                      f"python {name.lower()}.py"])
 
-    cmd_sync = f"fast-stack-forge make:sync {sync_name} --source {sync_src} --dest {sync_dst}"
-    st.markdown("**Generated command:**")
-    st.markdown(f'<div class="cmd-box">{cmd_sync}</div>', unsafe_allow_html=True)
+    # ── init:ds-make ─────────────────────────────────────────────────────────
+    with t_dsm:
+        lead("<b>init:ds-make</b> adds a FastAPI service, a Streamlit app, Docker files and API tests to an "
+             "existing AstroData repo. It finds the package in <code>src/</code> by itself.")
+        form, out = st.columns([5, 6], gap="large")
+        with form:
+            dsm_dir = st.text_input("Project folder", ".", key="dsm_dir", help="Leave '.' when you run it from the repo root")
+        with out:
+            args = ["init:ds-make"] + ([dsm_dir.strip()] if dsm_dir.strip() not in ("", ".") else [])
+            label("Command")
+            command_panel(args, then=["make install"])
+            st.caption("Adds src/<package>/api/, app/<package>_app.py, .streamlit/config.toml, docker-compose.yml, "
+                       "dockerfiles/ and tests/test_api.py, and new Makefile targets.")
 
+    # ── make:discard ─────────────────────────────────────────────────────────
+    with t_rm:
+        lead("<b>make:discard</b> deletes an entity's model, schema, controller and router.")
+        form, out = st.columns([5, 6], gap="large")
+        with form:
+            rm_name = st.text_input("Entity name", "User", key="rm_name")
+        with out:
+            label("Command")
+            command_panel(["make:discard", rm_name.strip() or "Entity"])
+            note("Commit your work first: the files are deleted, not moved.")
 
-# ─────────────────────────────────────────────────────────────────────────────
-# TAB 7 — fast-stack-forge make:dashboard
-# ─────────────────────────────────────────────────────────────────────────────
-with tab7:
-    st.markdown('<div class="info-box">📊 <b>fast-stack-forge make:dashboard</b> generates a multi-page Streamlit dashboard inside <code>app/dashboard/</code> and updates your Makefile with <code>make dashboard</code>.</div>', unsafe_allow_html=True)
-    c1, c2 = st.columns(2, gap="large")
-    with c1:
-        st.markdown("**Add dashboard pages:**")
-        preset_pages = st.multiselect(
-            "Choose preset pages",
-            ["Atelier","Analytics","Chatbot"],
-            default=["Atelier","Analytics"],
-            key="dash_pages",
-            help="Atelier → entity/service manager | Analytics → charts | Chatbot → AI chat UI"
-        )
-        custom_pages = st.text_input("Additional custom pages (comma-separated)", value="", key="dash_custom",
-            help="e.g. Reports, Settings, Users")
-        all_pages = list(preset_pages)
-        if custom_pages.strip():
-            all_pages += [p.strip() for p in custom_pages.split(",") if p.strip()]
-    with c2:
-        st.markdown("**Pages that will be generated:**")
-        for i, p in enumerate(all_pages, 1):
-            st.markdown(f"- `{i}_{p}.py`")
-        st.markdown("**Launch after generation:**")
-        st.code("make dashboard", language="bash")
-
-    pages_str = " ".join(all_pages)
-    cmd_dash = f"fast-stack-forge make:dashboard {pages_str}"
-    st.markdown("**Generated command:**")
-    st.markdown(f'<div class="cmd-box">{cmd_dash}</div>', unsafe_allow_html=True)
-
-st.markdown("---")
-st.markdown("<div style='text-align:center;color:#4a5568;font-size:0.82rem'>⚡ Fast-Stack-Forge · by <a href='https://savantech.org' style='color:#06b6d4'>SavanTech</a> · <a href='mailto:savantech25@gmail.com' style='color:#06b6d4'>savantech25@gmail.com</a></div>", unsafe_allow_html=True)
+forge.footer()
